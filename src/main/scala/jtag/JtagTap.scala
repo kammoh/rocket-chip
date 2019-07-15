@@ -7,9 +7,7 @@ import scala.collection.SortedMap
 // !!! See Issue #1160.
 // import chisel3._
 import Chisel._
-import chisel3.core.{Input, Output}
-import chisel3.util._
-import chisel3.experimental.withReset
+import chisel3.{Input, Output, withReset}
 
 import freechips.rocketchip.config.Parameters
 

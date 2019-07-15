@@ -5,16 +5,15 @@ package freechips.rocketchip.rocket
 
 import Chisel._
 import Chisel.ImplicitConversions._
-import chisel3.experimental._
+import chisel3.experimental.chiselName
+import chisel3.{withClock, withReset}
 import freechips.rocketchip.config._
-import freechips.rocketchip.subsystem._
 import freechips.rocketchip.diplomacy._
-import freechips.rocketchip.tilelink._
 import freechips.rocketchip.tile._
 import freechips.rocketchip.util._
 import freechips.rocketchip.util.property._
 import chisel3.internal.sourceinfo.SourceInfo
-import freechips.rocketchip.diplomaticobjectmodel.logicaltree.{ICacheLogicalTreeNode}
+import freechips.rocketchip.diplomaticobjectmodel.logicaltree.ICacheLogicalTreeNode
 
 class FrontendReq(implicit p: Parameters) extends CoreBundle()(p) {
   val pc = UInt(width = vaddrBitsExtended)
@@ -111,7 +110,7 @@ class FrontendModule(outer: Frontend) extends LazyModuleImp(outer)
   val s2_btb_resp_valid = if (usingBTB) Reg(Bool()) else false.B
   val s2_btb_resp_bits = Reg(new BTBResp)
   val s2_btb_taken = s2_btb_resp_valid && s2_btb_resp_bits.taken
-  val s2_tlb_resp = Reg(tlb.io.resp)
+  val s2_tlb_resp = RegInit(tlb.io.resp)
   val s2_xcpt = s2_tlb_resp.ae.inst || s2_tlb_resp.pf.inst
   val s2_speculative = Reg(init=Bool(false))
   val s2_partial_insn_valid = RegInit(false.B)

@@ -34,7 +34,7 @@ trait HasGeneratorUtilities {
   def getConfig(fullConfigClassNames: Seq[String]): Config = {
     new Config(fullConfigClassNames.foldRight(Parameters.empty) { case (currentName, config) =>
       val currentConfig = try {
-        Class.forName(currentName).newInstance.asInstanceOf[Config]
+        Class.forName(currentName).getDeclaredConstructor().newInstance().asInstanceOf[Config]
       } catch {
         case e: java.lang.ClassNotFoundException =>
           throwException(s"""Unable to find part "$currentName" from "$fullConfigClassNames", did you misspell it?""", e)

@@ -5,13 +5,13 @@ package freechips.rocketchip.rocket
 
 import Chisel._
 import Chisel.ImplicitConversions._
-import chisel3.experimental._
+import chisel3.experimental.chiselName
+import chisel3.withClock
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.tile._
 import freechips.rocketchip.util._
 import freechips.rocketchip.util.property._
 import freechips.rocketchip.scie._
-import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
 
 case class RocketCoreParams(

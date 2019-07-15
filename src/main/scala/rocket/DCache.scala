@@ -10,10 +10,10 @@ import freechips.rocketchip.tile.LookupByHartId
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 import freechips.rocketchip.util.property._
-import chisel3.{DontCare, WireInit}
+import chisel3.{DontCare, WireInit, withClock}
 import chisel3.internal.sourceinfo.SourceInfo
-import chisel3.experimental._
 import TLMessages._
+import chisel3.experimental.{dontTouch, chiselName}
 
 // TODO: delete this trait once deduplication is smart enough to avoid globally inlining matching circuits
 trait InlineInstance { self: chisel3.experimental.BaseModule =>

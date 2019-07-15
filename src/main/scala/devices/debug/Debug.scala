@@ -4,7 +4,7 @@ package freechips.rocketchip.devices.debug
 
 
 import Chisel._
-import chisel3.withClock
+import chisel3.{withClock, withReset}
 import freechips.rocketchip.config._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.regmapper._
@@ -13,11 +13,9 @@ import freechips.rocketchip.tile.MaxHartIdBits
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.interrupts._
 import freechips.rocketchip.util._
-import freechips.rocketchip.util.property._
 import freechips.rocketchip.devices.debug.systembusaccess._
-import freechips.rocketchip.diplomaticobjectmodel.logicaltree.{DebugLogicalTreeNode, LogicalModuleTree}
-import freechips.rocketchip.diplomaticobjectmodel.model._
-import freechips.rocketchip.amba.apb.{APBToTL, APBFanout}
+import freechips.rocketchip.diplomaticobjectmodel.logicaltree.DebugLogicalTreeNode
+import freechips.rocketchip.amba.apb.{APBFanout, APBToTL}
 import freechips.rocketchip.util.BooleanToAugmentedBoolean
 
 object DsbBusConsts {
@@ -239,7 +237,7 @@ object WNotifyWire {
 object RWNotify {
     def apply (n: Int, rVal: UInt, wVal: UInt, rNotify: Bool, wNotify: Bool, desc: Option[RegFieldDesc] = None): RegField = {
       RegField(n,
-        RegReadFn ((ready)       => {rNotify := ready ; (Bool(true), rVal)}),
+        RegReadFn (ready       => {rNotify := ready ; (Bool(true), rVal)}),
         RegWriteFn((valid, data) => {
           wNotify := valid
           when (valid) {wVal := data}

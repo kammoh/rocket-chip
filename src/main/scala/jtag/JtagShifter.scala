@@ -4,8 +4,8 @@ package freechips.rocketchip.jtag
 
 //import chisel3._
 import Chisel._
-import chisel3.core.{Input, Output}
-import chisel3.core.DataMirror
+import chisel3.{Input, Output}
+import chisel3.experimental.DataMirror
 import chisel3.internal.firrtl.KnownWidth
 
 import freechips.rocketchip.config.Parameters

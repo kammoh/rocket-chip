@@ -68,7 +68,8 @@ case class TLManagerParameters(
   val minAlignment = address.map(_.alignment).min
 
   // The device had better not support a transfer larger than its alignment
-  require (minAlignment >= maxTransfer, s"Bad $address: minAlignment ($minAlignment) must be >= maxTransfer ($maxTransfer)")
+  require (minAlignment >= maxTransfer,
+    s"Bad $address: minAlignment ($minAlignment) must be >= maxTransfer ($maxTransfer)")
 
   def toResource: ResourceAddress = {
     ResourceAddress(address, ResourcePermissions(
@@ -84,7 +85,7 @@ case class TLManagerParameters(
     case _: SinkNode[_, _, _, _, _] => false
     case node => node.inputs.size != 1
   }
-  def isTree = findTreeViolation() == None
+  def isTree = findTreeViolation().isEmpty
 
   def getUser[T <: UserBits : ClassTag](x: UInt): Seq[UserBitField[T]] = UserBits.extract[T](userBits, x)
   def putUser[T <: UserBits : ClassTag](x: UInt, seq: Seq[UInt]): UInt = UserBits.inject[T](userBits, x, seq)
@@ -97,13 +98,14 @@ case class TLManagerPortParameters(
   endSinkId:  Int = 0,
   minLatency: Int = 0)
 {
-  require (!managers.isEmpty, "Manager ports must have managers")
+  require (managers.nonEmpty, "Manager ports must have managers")
   require (isPow2(beatBytes), "Data channel width must be a power of 2")
   require (endSinkId >= 0, "Sink ids cannot be negative")
   require (minLatency >= 0, "Minimum required latency cannot be negative")
 
   def requireFifo() = managers.foreach { m =>
-    require(m.fifoId.isDefined && m.fifoId == managers.head.fifoId, s"${m.name} had fifoId ${m.fifoId}, which was not homogeneous (${managers.map(s => (s.name, s.fifoId))}) ")
+    require(m.fifoId.isDefined && m.fifoId == managers.head.fifoId,
+      s"${m.name} had fifoId ${m.fifoId}, which was not homogeneous (${managers.map(s => (s.name, s.fifoId))}) ")
   }
 
   // Bounds on required sizes
@@ -139,11 +141,11 @@ case class TLManagerPortParameters(
   def find(address: BigInt) = managers.find(_.address.exists(_.contains(address)))
 
   // The safe version will check the entire address
-  def findSafe(address: UInt) = Vec(managers.map(_.address.map(_.contains(address)).reduce(_ || _)))
+  def findSafe(address: UInt) = VecInit(managers.map(_.address.map(_.contains(address)).reduce(_ || _)))
   // The fast version assumes the address is valid (you probably want fastProperty instead of this function)
   def findFast(address: UInt) = {
     val routingMask = AddressDecoder(managers.map(_.address))
-    Vec(managers.map(_.address.map(_.widen(~routingMask)).distinct.map(_.contains(address)).reduce(_ || _)))
+    VecInit(managers.map(_.address.map(_.widen(~routingMask)).distinct.map(_.contains(address)).reduce(_ || _)))
   }
 
   // Compute the simplest AddressSets that decide a key
@@ -185,23 +187,40 @@ case class TLManagerPortParameters(
   }
 
   // Check for support of a given operation at a specific address
-  def supportsAcquireTSafe  (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(true, _.supportsAcquireT,   address, lgSize, range)
-  def supportsAcquireBSafe  (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(true, _.supportsAcquireB,   address, lgSize, range)
-  def supportsArithmeticSafe(address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(true, _.supportsArithmetic, address, lgSize, range)
-  def supportsLogicalSafe   (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(true, _.supportsLogical,    address, lgSize, range)
-  def supportsGetSafe       (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(true, _.supportsGet,        address, lgSize, range)
-  def supportsPutFullSafe   (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(true, _.supportsPutFull,    address, lgSize, range)
-  def supportsPutPartialSafe(address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(true, _.supportsPutPartial, address, lgSize, range)
-  def supportsHintSafe      (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(true, _.supportsHint,       address, lgSize, range)
+  def supportsAcquireTSafe  (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(true, _.supportsAcquireT,   address, lgSize, range)
+  def supportsAcquireBSafe  (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(true, _.supportsAcquireB,   address, lgSize, range)
+  def supportsArithmeticSafe(address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(true, _.supportsArithmetic, address, lgSize, range)
+  def supportsLogicalSafe   (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(true, _.supportsLogical,    address, lgSize, range)
+  def supportsGetSafe       (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(true, _.supportsGet,        address, lgSize, range)
+  def supportsPutFullSafe   (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(true, _.supportsPutFull,    address, lgSize, range)
+  def supportsPutPartialSafe(address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(true, _.supportsPutPartial, address, lgSize, range)
+  def supportsHintSafe      (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(true, _.supportsHint,       address, lgSize, range)
 
-  def supportsAcquireTFast  (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(false, _.supportsAcquireT,   address, lgSize, range)
-  def supportsAcquireBFast  (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(false, _.supportsAcquireB,   address, lgSize, range)
-  def supportsArithmeticFast(address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(false, _.supportsArithmetic, address, lgSize, range)
-  def supportsLogicalFast   (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(false, _.supportsLogical,    address, lgSize, range)
-  def supportsGetFast       (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(false, _.supportsGet,        address, lgSize, range)
-  def supportsPutFullFast   (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(false, _.supportsPutFull,    address, lgSize, range)
-  def supportsPutPartialFast(address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(false, _.supportsPutPartial, address, lgSize, range)
-  def supportsHintFast      (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) = supportHelper(false, _.supportsHint,       address, lgSize, range)
+
+  def supportsAcquireTFast  (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(false, _.supportsAcquireT,   address, lgSize, range)
+  def supportsAcquireBFast  (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(false, _.supportsAcquireB,   address, lgSize, range)
+  def supportsArithmeticFast(address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(false, _.supportsArithmetic, address, lgSize, range)
+  def supportsLogicalFast   (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(false, _.supportsLogical,    address, lgSize, range)
+  def supportsGetFast       (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(false, _.supportsGet,        address, lgSize, range)
+  def supportsPutFullFast   (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(false, _.supportsPutFull,    address, lgSize, range)
+  def supportsPutPartialFast(address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(false, _.supportsPutPartial, address, lgSize, range)
+  def supportsHintFast      (address: UInt, lgSize: UInt, range: Option[TransferSizes] = None) =
+    supportHelper(false, _.supportsHint,       address, lgSize, range)
 
   def findTreeViolation() = managers.flatMap(_.findTreeViolation()).headOption
   def isTree = !managers.exists(!_.isTree)
@@ -413,7 +432,8 @@ case class TLEdgeParameters(
   val maxLgSize = log2Ceil(maxTransfer)
 
   // Sanity check the link...
-  require (maxTransfer >= manager.beatBytes, s"Link's max transfer (${maxTransfer}) < ${manager.managers.map(_.name)}'s beatBytes (${manager.beatBytes})")
+  require (maxTransfer >= manager.beatBytes,
+    s"Link's max transfer (${maxTransfer}) < ${manager.managers.map(_.name)}'s beatBytes (${manager.beatBytes})")
 
   val bundle = TLBundleParameters(client, manager)
 }
@@ -421,7 +441,8 @@ case class TLEdgeParameters(
 case class TLAsyncManagerPortParameters(async: AsyncQueueParams, base: TLManagerPortParameters)
 case class TLAsyncClientPortParameters(base: TLClientPortParameters)
 case class TLAsyncBundleParameters(async: AsyncQueueParams, base: TLBundleParameters)
-case class TLAsyncEdgeParameters(client: TLAsyncClientPortParameters, manager: TLAsyncManagerPortParameters, params: Parameters, sourceInfo: SourceInfo)
+case class TLAsyncEdgeParameters(client: TLAsyncClientPortParameters, manager: TLAsyncManagerPortParameters,
+                                 params: Parameters, sourceInfo: SourceInfo)
 {
   val bundle = TLAsyncBundleParameters(manager.async, TLBundleParameters(client.base, manager.base))
 }
@@ -429,7 +450,8 @@ case class TLAsyncEdgeParameters(client: TLAsyncClientPortParameters, manager: T
 case class TLRationalManagerPortParameters(direction: RationalDirection, base: TLManagerPortParameters)
 case class TLRationalClientPortParameters(base: TLClientPortParameters)
 
-case class TLRationalEdgeParameters(client: TLRationalClientPortParameters, manager: TLRationalManagerPortParameters, params: Parameters, sourceInfo: SourceInfo)
+case class TLRationalEdgeParameters(client: TLRationalClientPortParameters, manager: TLRationalManagerPortParameters,
+                                    params: Parameters, sourceInfo: SourceInfo)
 {
   val bundle = TLBundleParameters(client.base, manager.base)
 }

@@ -12,7 +12,8 @@ import freechips.rocketchip.rocket.Instructions._
 import freechips.rocketchip.util._
 import freechips.rocketchip.util.property._
 import chisel3.internal.sourceinfo.SourceInfo
-import chisel3.experimental._
+import chisel3.experimental.chiselName
+import chisel3.withClock
 
 case class FPUParams(
   fLen: Int = 64,

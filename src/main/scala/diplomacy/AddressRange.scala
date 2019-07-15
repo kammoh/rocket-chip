@@ -48,11 +48,12 @@ object AddressRange
   def unify(seq: Seq[AddressRange]): Seq[AddressRange] = {
     if (seq.isEmpty) return Nil
     val ranges = seq.sorted
-    ranges.tail.foldLeft(Seq(ranges.head)) { case (head :: tail, x) =>
-      head.union(x) match {
-        case Some(z) => z :: tail
-        case None => x :: head :: tail
-      }
+    ranges.tail.foldLeft(Seq(ranges.head)) {
+      case (head :: tail, x) =>
+        head.union(x) match {
+          case Some(z) => z :: tail
+          case None => x :: head :: tail
+        }
     }.reverse
   }
   // Set subtraction... O(n*n) b/c I am lazy

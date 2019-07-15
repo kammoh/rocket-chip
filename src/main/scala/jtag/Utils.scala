@@ -3,8 +3,7 @@
 package freechips.rocketchip.jtag
 
 import Chisel._
-import chisel3.core.{Input, Output}
-import chisel3.experimental.withClock
+import chisel3.{Output, withClock}
 
 /** Bundle representing a tristate pin.
   */

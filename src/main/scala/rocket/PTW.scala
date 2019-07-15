@@ -12,7 +12,8 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 import freechips.rocketchip.util.property._
 import chisel3.internal.sourceinfo.SourceInfo
-import chisel3.experimental._
+import chisel3.experimental.chiselName
+import chisel3.withClock
 import scala.collection.mutable.ListBuffer
 
 class PTWReq(implicit p: Parameters) extends CoreBundle()(p) {
