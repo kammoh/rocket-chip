@@ -25,7 +25,8 @@ $(generated_dir)/$(long_name).behav_srams.v : $(generated_dir)/$(long_name).conf
 VERILATOR_VERSION=4.008
 VERILATOR_SRCDIR ?= verilator/src/verilator-$(VERILATOR_VERSION)
 VERILATOR_TARGET := $(abspath verilator/install/bin/verilator)
-INSTALLED_VERILATOR ?= $(VERILATOR_TARGET)
+INSTALLED_VERILATOR ?= verilator
+#$(VERILATOR_TARGET)
 $(VERILATOR_TARGET): $(VERILATOR_SRCDIR)/bin/verilator
 	$(MAKE) -C $(VERILATOR_SRCDIR) installbin installdata
 	touch $@
@@ -48,21 +49,22 @@ verilator/verilator-$(VERILATOR_VERSION).tar.gz:
 	mkdir -p $(dir $@)
 	wget http://www.veripool.org/ftp/verilator-$(VERILATOR_VERSION).tgz -O $@
 
-verilator: $(INSTALLED_VERILATOR)
+#verilator: $(INSTALLED_VERILATOR)
 
 # Run Verilator to produce a fast binary to emulate this circuit.
 VERILATOR := $(INSTALLED_VERILATOR) --cc --exe
-VERILATOR_THREADS ?= 2
+VERILATOR_THREADS ?= 4
 VERILATOR_FLAGS := --top-module $(MODEL) \
   +define+PRINTF_COND=\$$c\(\"verbose\",\"\&\&\"\,\"done_reset\"\) \
   +define+RANDOMIZE_GARBAGE_ASSIGN \
   +define+STOP_COND=\$$c\(\"done_reset\"\) --assert \
-  --output-split 20000 \
-  --output-split-cfuncs 20000 \
+  --output-split 100000 \
+  --output-split-cfuncs 100000 \
   --threads $(VERILATOR_THREADS) -Wno-UNOPTTHREADS \
-	-Wno-STMTDLY --x-assign unique \
+	-Wno-STMTDLY --x-assign unique --x-initial unique \
   -I$(vsrc) \
-  -O3 -CFLAGS "$(CXXFLAGS) -DVERILATOR -DTEST_HARNESS=V$(MODEL) -include $(csrc)/verilator.h -include $(generated_dir)/$(PROJECT).$(CONFIG).plusArgs"
+  -O3 -CFLAGS "$(CXXFLAGS) -O3 -g0 -fomit-frame-pointer -march=native -mtune=native -DVERILATOR -DTEST_HARNESS=V$(MODEL) \
+  -include $(csrc)/verilator.h -include $(generated_dir)/$(PROJECT).$(CONFIG).plusArgs"
 cppfiles = $(addprefix $(csrc)/, $(addsuffix .cc, $(CXXSRCS)))
 headers = $(wildcard $(csrc)/*.h)
 
@@ -78,7 +80,7 @@ $(emu): $(verilog) $(cppfiles) $(headers) $(INSTALLED_VERILATOR)
 
 $(emu_debug): $(verilog) $(cppfiles) $(headers) $(generated_dir)/$(long_name).d $(INSTALLED_VERILATOR)
 	mkdir -p $(generated_dir_debug)/$(long_name)
-	$(VERILATOR) $(VERILATOR_FLAGS) -Mdir $(generated_dir_debug)/$(long_name)  --trace \
+	$(VERILATOR) $(VERILATOR_FLAGS) -Mdir $(generated_dir_debug)/$(long_name)  --trace-fst \
 	-o $(abspath $(sim_dir))/$@ $(verilog) $(cppfiles) -LDFLAGS "$(LDFLAGS)" \
-	-CFLAGS "-I$(generated_dir_debug) -include $(model_header_debug)"
-	$(MAKE) VM_PARALLEL_BUILDS=1 -C $(generated_dir_debug)/$(long_name) -f V$(MODEL).mk
+	-CFLAGS "-I$(generated_dir_debug) -include $(model_header_debug) -DVM_TRACE_FST"
+	$(MAKE) VM_PARALLEL_BUILDS=4 -C $(generated_dir_debug)/$(long_name) -f V$(MODEL).mk

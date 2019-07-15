@@ -3,7 +3,7 @@
 package freechips.rocketchip.devices.debug
 
 import Chisel._
-import chisel3.core.{Input, Output}
+import chisel3.{Input, Output}
 import chisel3.internal.sourceinfo.SourceInfo
 import freechips.rocketchip.diplomacy.{LazyModule, LazyModuleImp, NexusNode, RenderedEdge,
   SimpleNodeImp, SinkNode, SourceNode, ValName}

@@ -39,7 +39,7 @@ case class IdRange(start: Int, end: Int) extends Ordered[IdRange]
   def contains(x: IdRange) = start <= x.start && x.end <= end
 
   def contains(x: Int)  = start <= x && x < end
-  def contains(x: UInt) =
+  def contains(x: UInt) : Bool =
     if (size == 0) {
       Bool(false)
     } else if (size == 1) { // simple comparison
@@ -51,7 +51,7 @@ case class IdRange(start: Int, end: Int) extends Ordered[IdRange]
       val uncommonMask = (1 << smallestCommonBit) - 1
       val uncommonBits = (x | UInt(0, width=smallestCommonBit))(largestDeltaBit, 0)
       // the prefix must match exactly (note: may shift ALL bits away)
-      (x >> smallestCommonBit) === UInt(start >> smallestCommonBit) &&
+      (x >> smallestCommonBit).asUInt === UInt(start >> smallestCommonBit) &&
       // firrtl constant prop range analysis can eliminate these two:
       UInt(start & uncommonMask) <= uncommonBits &&
       uncommonBits <= UInt((end-1) & uncommonMask)

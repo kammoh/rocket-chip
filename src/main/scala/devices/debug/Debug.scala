@@ -4,7 +4,7 @@ package freechips.rocketchip.devices.debug
 
 
 import Chisel._
-import chisel3.experimental._
+import chisel3.withClock
 import freechips.rocketchip.config._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.regmapper._
@@ -356,8 +356,8 @@ class TLDebugModuleOuter(device: Device)(implicit p: Parameters) extends LazyMod
     val HAWINDOWRdEn   = Wire(init = false.B)
 
     if (supportHartArray) {
-      val HAWINDOWSELReset = Wire(init = (new HAWINDOWSELFields().fromBits(0.U)))
-      val HAWINDOWSELNxt = Wire(init = (new HAWINDOWSELFields().fromBits(0.U)))
+      val HAWINDOWSELReset = Wire(init = new HAWINDOWSELFields().fromBits(0.U))
+      val HAWINDOWSELNxt = Wire(init = new HAWINDOWSELFields().fromBits(0.U))
       val HAWINDOWSELReg = Wire(init = new HAWINDOWSELFields().fromBits(AsyncResetReg(updateData = HAWINDOWSELNxt.asUInt,
         resetData = 0,
         enable = true.B,
