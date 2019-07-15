@@ -3,15 +3,13 @@
 package freechips.rocketchip.devices.debug
 
 import Chisel._
-import chisel3.core.{IntParam, Input, Output}
+import chisel3.experimental.IntParam
 import chisel3.util.HasBlackBoxResource
 import freechips.rocketchip.config.{Field, Parameters}
 import freechips.rocketchip.subsystem._
-import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.diplomaticobjectmodel.logicaltree.LogicalModuleTree
-import freechips.rocketchip.diplomaticobjectmodel.model.OMComponent
 import freechips.rocketchip.jtag._
 import freechips.rocketchip.util._
 import freechips.rocketchip.tilelink._
@@ -159,8 +157,8 @@ class SimDTM(implicit p: Parameters) extends BlackBox with HasBlackBoxResource {
     }
   }
 
-  setResource("/vsrc/SimDTM.v")
-  setResource("/csrc/SimDTM.cc")
+  addResource("/vsrc/SimDTM.v")
+  addResource("/csrc/SimDTM.cc")
 }
 
 class SimJTAG(tickDelay: Int = 50) extends BlackBox(Map("TICK_DELAY" -> IntParam(tickDelay)))
@@ -192,10 +190,10 @@ class SimJTAG(tickDelay: Int = 50) extends BlackBox(Map("TICK_DELAY" -> IntParam
     }
   }
 
-  setResource("/vsrc/SimJTAG.v")
-  setResource("/csrc/SimJTAG.cc")
-  setResource("/csrc/remote_bitbang.h")
-  setResource("/csrc/remote_bitbang.cc")
+  addResource("/vsrc/SimJTAG.v")
+  addResource("/csrc/SimJTAG.cc")
+  addResource("/csrc/remote_bitbang.h")
+  addResource("/csrc/remote_bitbang.cc")
 }
 
 object Debug {

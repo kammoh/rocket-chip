@@ -77,14 +77,14 @@ trait HasLazyRoCC extends CanHavePTW { this: BaseTile =>
   roccs.map(_.atlNode).foreach { atl => tlMasterXbar.node :=* atl }
   roccs.map(_.tlNode).foreach { tl => tlOtherMastersNode :=* tl }
 
-  nPTWPorts += roccs.map(_.nPTWPorts).foldLeft(0)(_ + _)
+  nPTWPorts += roccs.map(_.nPTWPorts).sum
   nDCachePorts += roccs.size
 }
 
 trait HasLazyRoCCModule extends CanHavePTWModule
     with HasCoreParameters { this: RocketTileModuleImp with HasFpuOpt =>
 
-  val (respArb, cmdRouter) = if(outer.roccs.size > 0) {
+  val (respArb, cmdRouter) = if(outer.roccs.nonEmpty) {
     val respArb = Module(new RRArbiter(new RoCCResponse()(outer.p), outer.roccs.size))
     val cmdRouter = Module(new RoccCommandRouter(outer.roccs.map(_.opcodes))(outer.p))
     outer.roccs.zipWithIndex.foreach { case (rocc, i) =>
@@ -97,7 +97,7 @@ trait HasLazyRoCCModule extends CanHavePTWModule
     }
 
     fpuOpt foreach { fpu =>
-      val nFPUPorts = outer.roccs.filter(_.usesFPU).size
+      val nFPUPorts = outer.roccs.count(_.usesFPU)
       if (usingFPU && nFPUPorts > 0) {
         val fpArb = Module(new InOrderArbiter(new FPInput()(outer.p), new FPResult()(outer.p), nFPUPorts))
         val fp_rocc_ios = outer.roccs.filter(_.usesFPU).map(_.module.io)
@@ -284,7 +284,7 @@ class CharacterCountExampleModuleImp(outer: CharacterCountExample)(implicit p: P
   tl_out.a.valid := (state === s_acq)
   tl_out.a.bits := edgesOut.Get(
                        fromSource = UInt(0),
-                       toAddress = addr_block << blockOffset,
+                       toAddress = (addr_block << blockOffset).asUInt,
                        lgSize = UInt(lgCacheBlockBytes))._2
   tl_out.d.ready := (state === s_gnt)
 

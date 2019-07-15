@@ -5,6 +5,9 @@
 #if VM_TRACE
 #include <memory>
 #include "verilated_vcd_c.h"
+#if VM_TRACE_FST
+#include "verilated_fst_c.h"
+#endif
 #endif
 #include <fesvr/dtm.h>
 #include "remote_bitbang.h"
@@ -37,6 +40,12 @@ extern remote_bitbang_t * jtag;
 static uint64_t trace_count = 0;
 bool verbose;
 bool done_reset;
+
+#if VM_TRACE_FST
+  VerilatedFstC *tfp = NULL;
+#else
+  VerilatedVcdC *tfp = NULL;
+#endif
 
 void handle_sigterm(int sig)
 {
@@ -258,12 +267,25 @@ done_processing:
 
 #if VM_TRACE
   Verilated::traceEverOn(true); // Verilator must compute traced signals
+
+#if VM_TRACE_FST
+  tfp = new VerilatedFstC;
+
+   if (vcdfile) {
+    tile->trace(tfp, 99);  // Trace 99 levels of hierarchy
+    tfp->open("dump.fst");
+   }
+
+#else
   std::unique_ptr<VerilatedVcdFILE> vcdfd(new VerilatedVcdFILE(vcdfile));
-  std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC(vcdfd.get()));
-  if (vcdfile) {
-    tile->trace(tfp.get(), 99);  // Trace 99 levels of hierarchy
-    tfp->open("");
-  }
+  tfp  = new VerilatedVcdC(vcdfd.get());
+   if (vcdfile) {
+
+    tile->trace(tfp, 99);  // Trace 99 levels of hierarchy
+//    tfp->open("");
+   }
+#endif
+
 #endif
 
   jtag = new remote_bitbang_t(rbb_port);
@@ -321,22 +343,22 @@ done_processing:
 
   if (dtm->exit_code())
   {
-    fprintf(stderr, "*** FAILED *** via dtm (code = %d, seed %d) after %ld cycles\n", dtm->exit_code(), random_seed, trace_count);
+    fprintf(stderr, "*** FAILED *** via dtm (code = %d, seed %d) after %lld cycles\n", dtm->exit_code(), random_seed, trace_count);
     ret = dtm->exit_code();
   }
   else if (jtag->exit_code())
   {
-    fprintf(stderr, "*** FAILED *** via jtag (code = %d, seed %d) after %ld cycles\n", jtag->exit_code(), random_seed, trace_count);
+    fprintf(stderr, "*** FAILED *** via jtag (code = %d, seed %d) after %lld cycles\n", jtag->exit_code(), random_seed, trace_count);
     ret = jtag->exit_code();
   }
   else if (trace_count == max_cycles)
   {
-    fprintf(stderr, "*** FAILED *** via trace_count (timeout, seed %d) after %ld cycles\n", random_seed, trace_count);
+    fprintf(stderr, "*** FAILED *** via trace_count (timeout, seed %d) after %lld cycles\n", random_seed, trace_count);
     ret = 2;
   }
   else if (verbose || print_cycles)
   {
-    fprintf(stderr, "*** PASSED *** Completed after %ld cycles\n", trace_count);
+    fprintf(stderr, "*** PASSED *** Completed after %lld cycles\n", trace_count);
   }
 
   if (dtm) delete dtm;

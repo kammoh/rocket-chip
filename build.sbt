@@ -7,20 +7,21 @@ import sys.process._
 
 enablePlugins(PackPlugin)
 
+crossScalaVersions := Seq("2.12.8")
+scalaVersion := "2.12.8"
+
 lazy val commonSettings = Seq(
   organization := "edu.berkeley.cs",
   version      := "1.2-SNAPSHOT",
-  scalaVersion := "2.12.4",
-  crossScalaVersions := Seq("2.12.4"),
   parallelExecution in Global := false,
   traceLevel   := 15,
   scalacOptions ++= Seq("-deprecation","-unchecked","-Xsource:2.11"),
-  libraryDependencies ++= Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value),
-  libraryDependencies ++= Seq("org.json4s" %% "json4s-jackson" % "3.6.1"),
-  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.6.1",
+  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
   publishMavenStyle := true,
   publishArtifact in Test := false,
-  pomIncludeRepository := { x => false },
+  pomIncludeRepository := { _ => false },
   pomExtra := <url>https://github.com/freechipsproject/rocket-chip</url>
   <licenses>
     <license>
@@ -50,20 +51,19 @@ lazy val commonSettings = Seq(
   }
 )
 
-lazy val chisel = (project in file("chisel3")).settings(commonSettings)
+//lazy val chisel = (project in file("chisel3")).settings(commonSettings)
 
 def dependOnChisel(prj: Project) = {
-  if (sys.props.contains("ROCKET_USE_MAVEN")) {
+//  if (true || sys.props.contains("ROCKET_USE_MAVEN")) {
     prj.settings(
       libraryDependencies ++= Seq("edu.berkeley.cs" %% "chisel3" % "3.2-SNAPSHOT")
     )
-  } else {
-    prj.dependsOn(chisel)
-  }
+//  } else {
+//    prj.dependsOn(chisel)
+//  }
 }
 
 lazy val hardfloat  = dependOnChisel(project).settings(commonSettings)
-  .settings(crossScalaVersions := Seq("2.12.4"))
   .settings(publishArtifact := false)
 lazy val `rocket-macros` = (project in file("macros")).settings(commonSettings)
   .settings(publishArtifact := false)
@@ -81,6 +81,15 @@ lazy val rocketchip = dependOnChisel(project in file("."))
       exportJars := true
   )
 
+lazy val testchipip = dependOnChisel(project)
+  .settings(commonSettings)
+  .dependsOn(rocketchip)
+  .settings(publishArtifact := false)
+lazy val dma = dependOnChisel(project)
+  .settings(commonSettings)
+  .dependsOn(rocketchip)
+  .dependsOn(testchipip)
+  .settings(publishArtifact := false)
 
 lazy val addons = settingKey[Seq[String]]("list of addons used for this build")
 lazy val make = inputKey[Unit]("trigger backend-specific makefile command")
@@ -91,7 +100,7 @@ lazy val chipSettings = Seq(
     val a = sys.env.getOrElse("ROCKETCHIP_ADDONS", "")
     println(s"Using addons: $a")
     a.split(" ")
-  },
+  } ++ Seq("testchipip", "dma"),
   unmanagedSourceDirectories in Compile ++= addons.value.map(baseDirectory.value / _ / "src/main/scala"),
   mainClass in (Compile, run) := Some("rocketchip.Generator"),
   make := {

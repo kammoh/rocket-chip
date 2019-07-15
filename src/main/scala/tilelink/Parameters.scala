@@ -2,11 +2,13 @@
 
 package freechips.rocketchip.tilelink
 
-import Chisel._
+import chisel3._
+import chisel3.util._
 import chisel3.internal.sourceinfo.SourceInfo
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
-import freechips.rocketchip.util.{RationalDirection,AsyncQueueParams, groupByIntoSeq}
+import freechips.rocketchip.util.{AsyncQueueParams, RationalDirection, groupByIntoSeq}
+
 import scala.math.max
 import scala.reflect.ClassTag
 
@@ -157,8 +159,8 @@ case class TLManagerPortParameters(
     Mux1H(fastPropertyGroup(p).map { case (v, a) => (a.map(_.contains(address)).reduce(_||_), d(v)) })
 
   // Note: returns the actual fifoId + 1 or 0 if None
-  def findFifoIdFast(address: UInt) = fastProperty(address, _.fifoId.map(_+1).getOrElse(0), (i:Int) => UInt(i))
-  def hasFifoIdFast(address: UInt) = fastProperty(address, _.fifoId.isDefined, (b:Boolean) => Bool(b))
+  def findFifoIdFast(address: UInt) = fastProperty(address, _.fifoId.map(_+1).getOrElse(0), (i:Int) => i.U)
+  def hasFifoIdFast(address: UInt) = fastProperty(address, _.fifoId.isDefined, (b:Boolean) => b.B)
 
   // Does this Port manage this ID/address?
   def containsSafe(address: UInt) = findSafe(address).reduce(_ || _)
@@ -177,9 +179,9 @@ case class TLManagerPortParameters(
     val mask = if (safe) ~BigInt(0) else AddressDecoder(supportCases.map(_._2))
     val simplified = supportCases.map { case (k, seq) => k -> AddressSet.unify(seq.map(_.widen(~mask)).distinct) }
     simplified.map { case (s, a) =>
-      (Bool(Some(s) == range) || s.containsLg(lgSize)) &&
+      (range.contains(s).B || s.containsLg(lgSize)) &&
       a.map(_.contains(address)).reduce(_||_)
-    }.foldLeft(Bool(false))(_||_)
+    }.foldLeft(false.B)(_||_)
   }
 
   // Check for support of a given operation at a specific address
@@ -306,10 +308,10 @@ case class TLClientPortParameters(
   def find(id: Int) = clients.find(_.sourceId.contains(id))
 
   // Synthesizable lookup methods
-  def find(id: UInt) = Vec(clients.map(_.sourceId.contains(id)))
+  def find(id: UInt) = VecInit(clients.map(_.sourceId.contains(id)))
   def contains(id: UInt) = find(id).reduce(_ || _)
 
-  def requestFifo(id: UInt) = Mux1H(find(id), clients.map(c => Bool(c.requestFifo)))
+  def requestFifo(id: UInt) = Mux1H(find(id), clients.map(c => c.requestFifo.B))
 
   private def safety_helper(member: TLClientParameters => TransferSizes)(id: UInt, lgSize: UInt) = {
     val allSame = clients.map(member(_) == member(clients(0))).reduce(_ && _)
