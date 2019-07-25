@@ -73,14 +73,14 @@ model_header_debug = $(generated_dir_debug)/$(long_name)/V$(MODEL).h
 
 $(emu): $(verilog) $(cppfiles) $(headers) $(INSTALLED_VERILATOR)
 	mkdir -p $(generated_dir)/$(long_name)
-	$(VERILATOR) $(VERILATOR_FLAGS) -Mdir $(generated_dir)/$(long_name) \
+	OBJCACHE=ccache $(VERILATOR) $(VERILATOR_FLAGS) -Mdir $(generated_dir)/$(long_name) \
 	-o $(abspath $(sim_dir))/$@ $(verilog) $(cppfiles) -LDFLAGS "$(LDFLAGS)" \
 	-CFLAGS "-I$(generated_dir) -include $(model_header)"
 	$(MAKE) VM_PARALLEL_BUILDS=1 -C $(generated_dir)/$(long_name) -f V$(MODEL).mk
 
 $(emu_debug): $(verilog) $(cppfiles) $(headers) $(generated_dir)/$(long_name).d $(INSTALLED_VERILATOR)
 	mkdir -p $(generated_dir_debug)/$(long_name)
-	$(VERILATOR) $(VERILATOR_FLAGS) -Mdir $(generated_dir_debug)/$(long_name)  --trace-fst \
+	OBJCACHE=ccache $(VERILATOR) $(VERILATOR_FLAGS) -Mdir $(generated_dir_debug)/$(long_name)  --trace-fst \
 	-o $(abspath $(sim_dir))/$@ $(verilog) $(cppfiles) -LDFLAGS "$(LDFLAGS)" \
 	-CFLAGS "-I$(generated_dir_debug) -include $(model_header_debug) -DVM_TRACE_FST"
 	$(MAKE) VM_PARALLEL_BUILDS=4 -C $(generated_dir_debug)/$(long_name) -f V$(MODEL).mk

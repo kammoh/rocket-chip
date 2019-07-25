@@ -90,6 +90,11 @@ lazy val dma = dependOnChisel(project)
   .dependsOn(rocketchip)
   .dependsOn(testchipip)
   .settings(publishArtifact := false)
+lazy val sha3 = dependOnChisel(project)
+  .settings(commonSettings)
+  .dependsOn(rocketchip)
+  .dependsOn(testchipip)
+  .settings(publishArtifact := false)
 
 lazy val addons = settingKey[Seq[String]]("list of addons used for this build")
 lazy val make = inputKey[Unit]("trigger backend-specific makefile command")
@@ -100,7 +105,7 @@ lazy val chipSettings = Seq(
     val a = sys.env.getOrElse("ROCKETCHIP_ADDONS", "")
     println(s"Using addons: $a")
     a.split(" ")
-  } ++ Seq("testchipip", "dma"),
+  } ++ Seq("testchipip", "dma", "sha3"),
   unmanagedSourceDirectories in Compile ++= addons.value.map(baseDirectory.value / _ / "src/main/scala"),
   mainClass in (Compile, run) := Some("rocketchip.Generator"),
   make := {

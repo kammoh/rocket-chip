@@ -161,11 +161,11 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     (if (usingAtomics) new ADecode +: (xLen > 32).option(new A64Decode).toSeq else Nil) ++:
     (if (fLen >= 32) new FDecode +: (xLen > 32).option(new F64Decode).toSeq else Nil) ++:
     (if (fLen >= 64) new DDecode +: (xLen > 32).option(new D64Decode).toSeq else Nil) ++:
-    (usingRoCC.option(new RoCCDecode)) ++:
-    (rocketParams.useSCIE.option(new SCIEDecode)) ++:
+    usingRoCC.option(new RoCCDecode) ++:
+    rocketParams.useSCIE.option(new SCIEDecode) ++:
     (if (xLen == 32) new I32Decode else new I64Decode) +:
-    (usingVM.option(new SDecode)) ++:
-    (usingDebug.option(new DebugDecode)) ++:
+    usingVM.option(new SDecode) ++:
+    usingDebug.option(new DebugDecode) ++:
     Seq(new FenceIDecode(tile.dcache.flushOnFenceI)) ++:
     rocketParams.haveCFlush.option(new CFlushDecode) ++:
     Seq(new IDecode)
@@ -253,7 +253,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   val id_ren = IndexedSeq(id_ctrl.rxs1, id_ctrl.rxs2)
   val id_raddr = IndexedSeq(id_raddr1, id_raddr2)
   val rf = new RegFile(31, xLen)
-  val id_rs = id_raddr.map(rf.read _)
+  val id_rs = id_raddr.map(rf.read)
   val ctrl_killd = Wire(Bool())
   val id_npc = (ibuf.io.pc.asSInt + ImmGen(IMM_UJ, id_inst(0))).asUInt
 
@@ -344,7 +344,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   val ex_reg_rs_bypass = Reg(Vec(id_raddr.size, Bool()))
   val ex_reg_rs_lsb = Reg(Vec(id_raddr.size, UInt(width = log2Ceil(bypass_sources.size))))
   val ex_reg_rs_msb = Reg(Vec(id_raddr.size, UInt()))
-  val ex_rs = for (i <- 0 until id_raddr.size)
+  val ex_rs = for (i <- id_raddr.indices)
     yield Mux(ex_reg_rs_bypass(i), bypass_mux(ex_reg_rs_lsb(i)), Cat(ex_reg_rs_msb(i), ex_reg_rs_lsb(i)))
   val ex_imm = ImmGen(ex_ctrl.sel_imm, ex_reg_inst)
   val ex_op1 = MuxLookup(ex_ctrl.sel_alu1, SInt(0), Seq(
@@ -428,7 +428,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
       ex_reg_mem_size := Cat(id_raddr2 =/= UInt(0), id_raddr1 =/= UInt(0))
     }
 
-    for (i <- 0 until id_raddr.size) {
+    for (i <- id_raddr.indices) {
       val do_bypass = id_bypass_src(i).reduce(_||_)
       val bypass_src = PriorityEncoder(id_bypass_src(i))
       ex_reg_rs_bypass(i) := do_bypass
@@ -685,7 +685,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   sboard.clear(ll_wen, ll_waddr)
   def id_sboard_clear_bypass(r: UInt) = {
     // ll_waddr arrives late when D$ has ECC, so reshuffle the hazard check
-    if (!tileParams.dcache.get.dataECC.isDefined) ll_wen && ll_waddr === r
+    if (tileParams.dcache.get.dataECC.isEmpty) ll_wen && ll_waddr === r
     else div.io.resp.fire() && div.io.resp.bits.tag === r || dmem_resp_replay && dmem_resp_xpu && dmem_resp_waddr === r
   }
   val id_sboard_hazard = checkHazards(hazard_targets, rd => sboard.read(rd) && !id_sboard_clear_bypass(rd))
@@ -718,7 +718,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     fp_sboard.clear(dmem_resp_replay && dmem_resp_fpu, dmem_resp_waddr)
     fp_sboard.clear(io.fpu.sboard_clr, io.fpu.sboard_clra)
 
-    checkHazards(fp_hazard_targets, fp_sboard.read _)
+    checkHazards(fp_hazard_targets, fp_sboard.read)
   } else Bool(false)
 
   val dcache_blocked = {
@@ -773,7 +773,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     CFIType.branch)))
   io.imem.btb_update.bits.target := io.imem.req.bits.pc
   io.imem.btb_update.bits.br_pc := (if (usingCompressed) mem_reg_pc + Mux(mem_reg_rvc, UInt(0), UInt(2)) else mem_reg_pc)
-  io.imem.btb_update.bits.pc := ~(~io.imem.btb_update.bits.br_pc | (coreInstBytes*fetchWidth-1))
+  io.imem.btb_update.bits.pc := ~(~io.imem.btb_update.bits.br_pc | (coreInstBytes*fetchWidth-1).U)
   io.imem.btb_update.bits.prediction := mem_reg_btb_resp
 
   io.imem.bht_update.valid := mem_reg_valid && !take_pc_wb
@@ -904,7 +904,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
 
   def coverExceptions(exceptionValid: Bool, cause: UInt, labelPrefix: String, coverCausesLabels: Seq[(Int, String)]): Unit = {
     for ((coverCause, label) <- coverCausesLabels) {
-      cover(exceptionValid && (cause === UInt(coverCause)), s"${labelPrefix}_${label}")
+      cover(exceptionValid && (cause === UInt(coverCause)), s"${labelPrefix}_$label")
     }
   }
 
@@ -915,7 +915,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     // efficient means to compress 64-bit VA into vaddrBits+1 bits
     // (VA is bad if VA(vaddrBits) != VA(vaddrBits-1))
     val a = a0.asSInt >> vaddrBits
-    val msb = Mux(a === 0.S || a === -1.S, ea(vaddrBits), !ea(vaddrBits-1))
+    val msb = Mux(a === 0.S || a === (-1).S, ea(vaddrBits), !ea(vaddrBits-1))
     Cat(msb, ea(vaddrBits-1,0))
   }
 
@@ -927,10 +927,10 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     def readBypassed(addr: UInt): Bool = _next(addr)
 
     private val _r = Reg(init=Bits(0, n))
-    private val r = if (zero) (_r >> 1 << 1) else _r
+    private val r : UInt  = if (zero) (_r >> 1) << 1 else _r
     private var _next = r
     private var ens = Bool(false)
-    private def mask(en: Bool, addr: UInt) = Mux(en, UInt(1) << addr, UInt(0))
+    private def mask(en: Bool, addr: UInt): UInt = Mux(en, UInt(1) << addr, UInt(0))
     private def update(en: Bool, update: UInt) = {
       _next = update
       ens = ens || en
@@ -940,7 +940,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
 }
 
 class RegFile(n: Int, w: Int, zero: Boolean = false) {
-  val rf = Mem(n, UInt(width = w))
+  val rf = Mem(n, UInt(width = w)).suggestName("rf")
   private def access(addr: UInt) = rf(~addr(log2Up(n)-1,0))
   private val reads = ArrayBuffer[(UInt,UInt)]()
   private var canRead = true
