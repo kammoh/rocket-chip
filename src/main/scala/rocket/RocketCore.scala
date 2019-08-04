@@ -183,53 +183,53 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   val ex_reg_flush_pipe      = Reg(Bool())
   val ex_reg_load_use        = Reg(Bool())
   val ex_reg_cause           = Reg(UInt())
-  val ex_reg_replay          = Reg(Bool())
-  val ex_reg_pc              = Reg(UInt())
-  val ex_reg_mem_size        = Reg(UInt())
-  val ex_reg_inst            = Reg(Bits())
-  val ex_reg_raw_inst        = Reg(UInt())
-  val ex_scie_unpipelined    = Reg(Bool())
-  val ex_scie_pipelined      = Reg(Bool())
-  val ex_reg_bpwatch         = Reg(Vec(nBreakpoints, new BPWatch))
+  val ex_reg_replay = Reg(Bool())
+  val ex_reg_pc = Reg(UInt())
+  val ex_reg_mem_size = Reg(UInt())
+  val ex_reg_inst = Reg(Bits())
+  val ex_reg_raw_inst = Reg(UInt())
+  val ex_scie_unpipelined = Reg(Bool())
+  val ex_scie_pipelined = Reg(Bool())
+  val ex_reg_wphit            = Reg(Vec(nBreakpoints, Bool()))
 
-  val mem_reg_xcpt_interrupt = Reg(Bool())
-  val mem_reg_valid          = Reg(Bool())
-  val mem_reg_rvc            = Reg(Bool())
-  val mem_reg_btb_resp       = Reg(new BTBResp)
-  val mem_reg_xcpt           = Reg(Bool())
-  val mem_reg_replay         = Reg(Bool())
-  val mem_reg_flush_pipe     = Reg(Bool())
-  val mem_reg_cause          = Reg(UInt())
-  val mem_reg_slow_bypass    = Reg(Bool())
-  val mem_reg_load           = Reg(Bool())
-  val mem_reg_store          = Reg(Bool())
-  val mem_reg_sfence         = Reg(Bool())
-  val mem_reg_pc             = Reg(UInt())
-  val mem_reg_inst           = Reg(Bits())
-  val mem_reg_mem_size       = Reg(UInt())
-  val mem_reg_raw_inst       = Reg(UInt())
-  val mem_scie_unpipelined   = Reg(Bool())
-  val mem_scie_pipelined     = Reg(Bool())
-  val mem_reg_wdata          = Reg(Bits())
-  val mem_reg_rs2            = Reg(Bits())
-  val mem_br_taken           = Reg(Bool())
-  val take_pc_mem            = Wire(Bool())
-  val mem_reg_bpwatch        = Reg(Vec(nBreakpoints, new BPWatch))
+  val mem_reg_xcpt_interrupt  = Reg(Bool())
+  val mem_reg_valid           = Reg(Bool())
+  val mem_reg_rvc             = Reg(Bool())
+  val mem_reg_btb_resp        = Reg(new BTBResp)
+  val mem_reg_xcpt            = Reg(Bool())
+  val mem_reg_replay          = Reg(Bool())
+  val mem_reg_flush_pipe      = Reg(Bool())
+  val mem_reg_cause           = Reg(UInt())
+  val mem_reg_slow_bypass     = Reg(Bool())
+  val mem_reg_load            = Reg(Bool())
+  val mem_reg_store           = Reg(Bool())
+  val mem_reg_sfence = Reg(Bool())
+  val mem_reg_pc = Reg(UInt())
+  val mem_reg_inst = Reg(Bits())
+  val mem_reg_mem_size = Reg(UInt())
+  val mem_reg_raw_inst = Reg(UInt())
+  val mem_scie_unpipelined = Reg(Bool())
+  val mem_scie_pipelined = Reg(Bool())
+  val mem_reg_wdata = Reg(Bits())
+  val mem_reg_rs2 = Reg(Bits())
+  val mem_br_taken = Reg(Bool())
+  val take_pc_mem = Wire(Bool())
+  val mem_reg_wphit          = Reg(Vec(nBreakpoints, Bool()))
 
   val wb_reg_valid           = Reg(Bool())
   val wb_reg_xcpt            = Reg(Bool())
   val wb_reg_replay          = Reg(Bool())
   val wb_reg_flush_pipe      = Reg(Bool())
   val wb_reg_cause           = Reg(UInt())
-  val wb_reg_sfence          = Reg(Bool())
-  val wb_reg_pc              = Reg(UInt())
-  val wb_reg_mem_size        = Reg(UInt())
-  val wb_reg_inst            = Reg(Bits())
-  val wb_reg_raw_inst        = Reg(UInt())
-  val wb_reg_wdata           = Reg(Bits())
-  val wb_reg_rs2             = Reg(Bits())
-  val take_pc_wb             = Wire(Bool())
-  val wb_reg_bpwatch         = Reg(Vec(nBreakpoints, new BPWatch))
+  val wb_reg_sfence = Reg(Bool())
+  val wb_reg_pc = Reg(UInt())
+  val wb_reg_mem_size = Reg(UInt())
+  val wb_reg_inst = Reg(Bits())
+  val wb_reg_raw_inst = Reg(UInt())
+  val wb_reg_wdata = Reg(Bits())
+  val wb_reg_rs2 = Reg(Bits())
+  val take_pc_wb = Wire(Bool())
+  val wb_reg_wphit           = Reg(Vec(nBreakpoints, Bool()))
 
   val take_pc_mem_wb = take_pc_wb || take_pc_mem
   val take_pc = take_pc_mem_wb
@@ -451,7 +451,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     ex_reg_raw_inst := id_raw_inst(0)
     ex_reg_pc := ibuf.io.pc
     ex_reg_btb_resp := ibuf.io.btb_resp
-    ex_reg_bpwatch := bpu.io.bpwatch
+    ex_reg_wphit := bpu.io.bpwatch.map { bpw => bpw.ivalid(0) }
   }
 
   // replay inst in ex stage?
@@ -510,7 +510,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     mem_reg_btb_resp := ex_reg_btb_resp
     mem_reg_flush_pipe := ex_reg_flush_pipe
     mem_reg_slow_bypass := ex_slow_bypass
-    mem_reg_bpwatch := ex_reg_bpwatch
+    mem_reg_wphit := ex_reg_wphit
 
     mem_reg_cause := ex_cause
     mem_reg_inst := ex_reg_inst
@@ -574,7 +574,8 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     wb_reg_raw_inst := mem_reg_raw_inst
     wb_reg_mem_size := mem_reg_mem_size
     wb_reg_pc := mem_reg_pc
-    wb_reg_bpwatch := mem_reg_bpwatch
+    wb_reg_wphit := mem_reg_wphit | bpu.io.bpwatch.map { bpw => bpw.dvalid(0) }
+
   }
 
   val (wb_xcpt, wb_cause) = checkExceptions(List(
@@ -671,7 +672,10 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   csr.io.rw.cmd := CSR.maskCmd(wb_reg_valid, wb_ctrl.csr)
   csr.io.rw.wdata := wb_reg_wdata
   io.trace := csr.io.trace
-  io.bpwatch := wb_reg_bpwatch
+  for (((iobpw, wphit), bp) <- io.bpwatch zip wb_reg_wphit zip csr.io.bp) {
+    iobpw.valid(0) := wphit
+    iobpw.action := bp.control.action
+  }
 
   val hazard_targets = Seq((id_ctrl.rxs1 && id_raddr1 =/= UInt(0), id_raddr1),
                            (id_ctrl.rxs2 && id_raddr2 =/= UInt(0), id_raddr2),
@@ -685,7 +689,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   sboard.clear(ll_wen, ll_waddr)
   def id_sboard_clear_bypass(r: UInt) = {
     // ll_waddr arrives late when D$ has ECC, so reshuffle the hazard check
-    if (tileParams.dcache.get.dataECC.isEmpty) ll_wen && ll_waddr === r
+    if (!tileParams.dcache.get.dataECC.isDefined) ll_wen && ll_waddr === r
     else div.io.resp.fire() && div.io.resp.bits.tag === r || dmem_resp_replay && dmem_resp_xpu && dmem_resp_waddr === r
   }
   val id_sboard_hazard = checkHazards(hazard_targets, rd => sboard.read(rd) && !id_sboard_clear_bypass(rd))
@@ -718,7 +722,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     fp_sboard.clear(dmem_resp_replay && dmem_resp_fpu, dmem_resp_waddr)
     fp_sboard.clear(io.fpu.sboard_clr, io.fpu.sboard_clra)
 
-    checkHazards(fp_hazard_targets, fp_sboard.read)
+    checkHazards(fp_hazard_targets, fp_sboard.read _)
   } else Bool(false)
 
   val dcache_blocked = {
@@ -904,7 +908,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
 
   def coverExceptions(exceptionValid: Bool, cause: UInt, labelPrefix: String, coverCausesLabels: Seq[(Int, String)]): Unit = {
     for ((coverCause, label) <- coverCausesLabels) {
-      cover(exceptionValid && (cause === UInt(coverCause)), s"${labelPrefix}_$label")
+      cover(exceptionValid && (cause === UInt(coverCause)), s"${labelPrefix}_${label}")
     }
   }
 
@@ -915,7 +919,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     // efficient means to compress 64-bit VA into vaddrBits+1 bits
     // (VA is bad if VA(vaddrBits) != VA(vaddrBits-1))
     val a = a0.asSInt >> vaddrBits
-    val msb = Mux(a === 0.S || a === (-1).S, ea(vaddrBits), !ea(vaddrBits-1))
+    val msb = Mux(a === 0.S || a === -1.S, ea(vaddrBits), !ea(vaddrBits-1))
     Cat(msb, ea(vaddrBits-1,0))
   }
 
@@ -927,10 +931,10 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     def readBypassed(addr: UInt): Bool = _next(addr)
 
     private val _r = Reg(init=Bits(0, n))
-    private val r : UInt  = if (zero) (_r >> 1) << 1 else _r
+    private val r = if (zero) (_r >> 1 << 1) else _r
     private var _next = r
     private var ens = Bool(false)
-    private def mask(en: Bool, addr: UInt): UInt = Mux(en, UInt(1) << addr, UInt(0))
+    private def mask(en: Bool, addr: UInt) = Mux(en, UInt(1) << addr, UInt(0))
     private def update(en: Bool, update: UInt) = {
       _next = update
       ens = ens || en
@@ -940,7 +944,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
 }
 
 class RegFile(n: Int, w: Int, zero: Boolean = false) {
-  val rf = Mem(n, UInt(width = w)).suggestName("rf")
+  val rf = Mem(n, UInt(width = w))
   private def access(addr: UInt) = rf(~addr(log2Up(n)-1,0))
   private val reads = ArrayBuffer[(UInt,UInt)]()
   private var canRead = true
