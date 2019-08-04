@@ -95,36 +95,3 @@ object Generator extends GeneratorApp {
   generateROMs
   generateArtefacts
 }
-
-object SbtRocketGenerator extends GeneratorApp {
-  override lazy val names = ParsedInputNames(
-    targetDir = "emulator/target",
-    topModuleProject = "freechips.rocketchip.system",
-    topModuleClass = "TestHarness",
-    configProject = "sha3",
-    configs = s"WithSha3Config")
-
-  override val longName = names.configProject + "." + names.configs
-
-  //  new File(td).mkdirs()
-
-  val nm = s"$td/${names.configProject}.${names.configs}"
-  val generatedDir = s"$td/generated_src"
-
-  new File(generatedDir).mkdirs()
-
-  val firrtlArgs = Array("-i", s"$nm.fir" , "-o", s"$nm.v", "-X", "verilog", "--infer-rw", names.topModuleClass, "--repl-seq-mem",
-    s"-c:${names.topModuleClass}:-o:$nm.rom.conf",
-    "-faf", s"$nm.anno.json",
-    "-td", s"$generatedDir/$longName/")
-
-
-  chisel3.Driver.dumpFirrtl(circuit, Some(new File(td, s"$longName.fir")))
-  generateAnno
-  generateTestSuiteMakefrags
-  generateROMs
-  generateArtefacts
-
-  println("running firrtl " + firrtlArgs.mkString(" "))
-  firrtl.stage.FirrtlMain.main(firrtlArgs)
-}
