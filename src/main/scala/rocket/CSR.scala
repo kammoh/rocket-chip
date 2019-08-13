@@ -106,10 +106,10 @@ class PTBR(implicit p: Parameters) extends CoreBundle()(p) {
 object PRV
 {
   val SZ = 2
-  val U = 0
-  val S = 1
-  val H = 2
-  val M = 3
+  val U = UInt(0, SZ)
+  val S = UInt(1, SZ)
+  val H = UInt(2, SZ)
+  val M = UInt(3, SZ)
 }
 
 object CSR
@@ -596,7 +596,7 @@ class CSRFile(
       when (!reg_debug) {
         reg_debug := true
         reg_dpc := epc
-        reg_dcsr.cause := Mux(reg_singleStepped, 4, Mux(causeIsDebugInt, 3, Mux[UInt](causeIsDebugTrigger, 2, 1)))
+        reg_dcsr.cause := Mux(reg_singleStepped, 4.U, Mux(causeIsDebugInt, 3.U, Mux(causeIsDebugTrigger, 2.U, 1.U)))
         reg_dcsr.prv := trimPrivilege(reg_mstatus.prv)
         new_prv := PRV.M
       }
@@ -793,8 +793,8 @@ class CSRFile(
       }
       when (decoded_addr(CSRs.satp)) {
         val new_satp = new PTBR().fromBits(wdata)
-        val valid_modes = 0 +: (minPgLevels to pgLevels).map(new_satp.pgLevelsToMode(_))
-        when (new_satp.mode.isOneOf(valid_modes.map(_.U))) {
+        val valid_modes = 0.U +: (minPgLevels to pgLevels).map(new_satp.pgLevelsToMode(_).U)
+        when (new_satp.mode.isOneOf(valid_modes)) {
           reg_satp.mode := new_satp.mode & valid_modes.reduce(_|_)
           reg_satp.ppn := new_satp.ppn(ppnBits-1,0)
           if (asIdBits > 0) reg_satp.asid := new_satp.asid(asIdBits-1,0)
@@ -934,7 +934,7 @@ class CSRFile(
   }
   def formEPC(x: UInt) = ~(~x | (if (usingCompressed) 1.U else 3.U))
   def readEPC(x: UInt) = ~(~x | Mux(reg_misa('c' - 'a'), 1.U, 3.U))
-  def formTVec(x: UInt) = x andNot Mux(x(0), ((((BigInt(1) << mtvecInterruptAlign) - 1) << mtvecBaseAlign) | 2).U, 2)
+  def formTVec(x: UInt) = x andNot Mux(x(0), ((((BigInt(1) << mtvecInterruptAlign) - 1) << mtvecBaseAlign) | 2).U, 2.U)
   def isaStringToMask(s: String) = s.map(x => 1 << (x - 'A')).foldLeft(0)(_|_)
   def formFS(fs: UInt) = if (coreParams.haveFSDirty) fs else Fill(2, fs.orR)
 }

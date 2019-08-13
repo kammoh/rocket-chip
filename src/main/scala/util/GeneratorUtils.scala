@@ -23,7 +23,7 @@ case class ParsedInputNames(
     outputBaseName: Option[String]) {
   val configClasses: Seq[String] = configs.split('_')
   def prepend(prefix: String, suffix: String) =
-    if (prefix == "" || prefix == "_root_") suffix else (prefix + "." + suffix)
+    if (prefix == "" || prefix == "_root_") suffix else prefix + "." + suffix
   val fullConfigClasses: Seq[String] = configClasses.map(x => prepend(configProject, x))
   val fullTopModuleClass: String = prepend(topModuleProject, topModuleClass)
 }
@@ -70,7 +70,7 @@ trait HasGeneratorUtilities {
         }
       }
     configs foreach { case (name, c) =>
-      res append s"name ${name} depth ${c.depth} width ${c.width}\n"
+      res append s"name $name depth ${c.depth} width ${c.width}\n"
     }
     res.toString
   }
@@ -79,7 +79,7 @@ trait HasGeneratorUtilities {
 /** Standardized command line interface for Scala entry point */
 trait GeneratorApp extends App with HasGeneratorUtilities {
   lazy val names: ParsedInputNames = {
-    require(args.size == 5 || args.size == 6, "Usage: sbt> " +
+    require(args.length == 5 || args.length == 6, "Usage: sbt> " +
       "run TargetDir TopModuleProjectName TopModuleName " +
       "ConfigProjectName ConfigNameString [OutputFilesBaseName]")
     val base =
@@ -91,7 +91,7 @@ trait GeneratorApp extends App with HasGeneratorUtilities {
         configs = args(4),
         outputBaseName = None)
 
-    if (args.size == 6) {
+    if (args.length == 6) {
       base.copy(outputBaseName = Some(args(5)))
     } else {
       base
@@ -146,7 +146,7 @@ trait GeneratorApp extends App with HasGeneratorUtilities {
     val f = new File(targetDir, fname)
     val fw = new FileWriter(f)
     fw.write(contents)
-    fw.close
+    fw.close()
     f
   }
 }

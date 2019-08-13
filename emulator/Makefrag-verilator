@@ -1,20 +1,19 @@
 #--------------------------------------------------------------------
 # Verilator Generation
 #--------------------------------------------------------------------
-firrtl = $(generated_dir)/$(long_name).fir
 verilog = \
   $(generated_dir)/$(long_name).v \
   $(generated_dir)/$(long_name).behav_srams.v \
 
-.SECONDARY: $(firrtl) $(verilog)
+.SECONDARY: $(verilog)
 
-$(generated_dir)/%.fir $(generated_dir)/%.d: $(FIRRTL_JAR) $(chisel_srcs) $(bootrom_img)
+$(generated_dir)%.conf $(generated_dir)/%.v $(generated_dir)/%.d: $(chisel_srcs) $(bootrom_img)
 	mkdir -p $(dir $@)
 	cd $(base_dir) && $(SBT) "runMain $(PROJECT).Generator $(generated_dir) $(PROJECT) $(MODEL) $(CFG_PROJECT) $(CONFIG)"
 
-%.v %.conf: %.fir $(FIRRTL_JAR)
-	mkdir -p $(dir $@)
-	$(FIRRTL) $(patsubst %,-i %,$(filter %.fir,$^)) -o $*.v -X verilog --infer-rw $(MODEL) --repl-seq-mem -c:$(MODEL):-o:$*.conf -faf $*.anno.json -td $(generated_dir)/$(long_name)/
+#%.v %.conf: %.fir $(FIRRTL_JAR)
+#	mkdir -p $(dir $@)
+#	$(FIRRTL) $(patsubst %,-i %,$(filter %.fir,$^)) -o $*.v -X verilog --infer-rw $(MODEL) --repl-seq-mem -c:$(MODEL):-o:$*.conf -faf $*.anno.json -td $(generated_dir)/$(long_name)/
 
 $(generated_dir)/$(long_name).behav_srams.v : $(generated_dir)/$(long_name).conf $(VLSI_MEM_GEN)
 	cd $(generated_dir) && \
@@ -49,7 +48,7 @@ verilator/verilator-$(VERILATOR_VERSION).tar.gz:
 	mkdir -p $(dir $@)
 	wget http://www.veripool.org/ftp/verilator-$(VERILATOR_VERSION).tgz -O $@
 
-#verilator: $(INSTALLED_VERILATOR)
+verilator: $(INSTALLED_VERILATOR)
 
 # Run Verilator to produce a fast binary to emulate this circuit.
 VERILATOR := $(INSTALLED_VERILATOR) --cc --exe
