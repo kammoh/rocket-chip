@@ -8,7 +8,7 @@ PROJECT ?= freechips.rocketchip.system
 CFG_PROJECT ?= $(PROJECT)
 CONFIG ?= DefaultConfig
 # TODO: For now must match rocketchip.Generator
-long_name = $(PROJECT).$(CONFIG)
+long_name = $(CFG_PROJECT).$(CONFIG)
 
 VLSI_MEM_GEN ?= $(base_dir)/scripts/vlsi_mem_gen
 

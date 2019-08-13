@@ -85,20 +85,20 @@ lazy val rocketchip = dependOnChisel(project in file("."))
       "org.scalatest" %% "scalatest" % "3.0.+" % Test,
       "org.scalacheck" %% "scalacheck" % "1.14.+" % Test,
       "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-      "org.scalatra.scalate" %% "scalate-core" % "1.9.+" % Test,
-      "com.lihaoyi" %% "os-lib" % "0.3.0" % Test,
+      "org.scalatra.scalate" %% "scalate-core" % "1.9.4+" % Test,
+      "com.lihaoyi" %% "os-lib" % "0.3.0"
     )
   )
 
-lazy val testchipip = dependOnChisel(project)
-  .settings(commonSettings)
-  .dependsOn(rocketchip)
-  .settings(publishArtifact := false)
-lazy val dma = dependOnChisel(project in file("dma"))
-  .settings(commonSettings)
-  .dependsOn(rocketchip)
-  .dependsOn(testchipip)
-  .settings(publishArtifact := false)
+//lazy val testchipip = dependOnChisel(project)
+//  .settings(commonSettings)
+//  .dependsOn(rocketchip)
+//  .settings(publishArtifact := false)
+//lazy val dma = dependOnChisel(project in file("dma"))
+//  .settings(commonSettings)
+//  .dependsOn(rocketchip)
+//  .dependsOn(testchipip)
+//  .settings(publishArtifact := false)
 
 lazy val sha3 = dependOnChisel(project in file("sha3"))
   .settings(commonSettings)
@@ -112,7 +112,7 @@ lazy val sha3 = dependOnChisel(project in file("sha3"))
       "org.scalacheck" %% "scalacheck" % "1.14.+" % Test,
       "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
       "org.scalatra.scalate" %% "scalate-core" % "1.9.+" % Test,
-      "com.lihaoyi" %% "os-lib" % "0.3.0" % Test,
+      "com.lihaoyi" %% "os-lib" % "0.3.0" % Test
     )
   )
 
@@ -125,9 +125,11 @@ lazy val chipSettings = Seq(
     val a = sys.env.getOrElse("ROCKETCHIP_ADDONS", "")
     println(s"Using addons: $a")
     a.split(" ")
-  } ++ Seq("testchipip", "sha3"),
+  } ++ Seq("sha3"),
   unmanagedSourceDirectories in Compile ++= addons.value.map(baseDirectory.value / _ / "src/main/scala"),
   unmanagedSourceDirectories in Compile ++= addons.value.map(baseDirectory.value / _ / "src/main/java"),
+  unmanagedResourceDirectories in Compile ++= addons.value.map(baseDirectory.value / _ / "src/test/resources"),
+  unmanagedResourceDirectories in Test ++= addons.value.map(baseDirectory.value / _ / "src/test/resources"),
   //  unmanagedSourceDirectories in Test ++= addons.value.map(baseDirectory.value / _ / "src/test/scala"),
   //  unmanagedSourceDirectories in Test ++= addons.value.map(baseDirectory.value / _ / "src/test/java"),
   mainClass in(Compile, run) := Some("rocketchip.Generator"),
