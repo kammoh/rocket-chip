@@ -5,11 +5,11 @@ package freechips.rocketchip.util
 
 import chisel3.internal.InstanceId
 import freechips.rocketchip.diplomacy.DiplomaticSRAM
-import Chisel._
-import chisel3.SyncReadMem
+import chisel3.{Data, SyncReadMem, Vec}
+import chisel3.util.log2Ceil
 import freechips.rocketchip.amba.axi4.AXI4RAM
 import freechips.rocketchip.diplomaticobjectmodel.DiplomaticObjectModelAddressing
-import freechips.rocketchip.diplomaticobjectmodel.model.OMSRAM
+import freechips.rocketchip.diplomaticobjectmodel.model.{OMSRAM, OMRTLModule}
 
 import scala.math.log10
 
@@ -21,7 +21,7 @@ object DescribedSRAM {
     data: T
   ): (SyncReadMem[T], OMSRAM) = {
 
-    val mem = SeqMem(size, data)
+    val mem = SyncReadMem(size, data)
 
     mem.suggestName(name)
 
@@ -33,11 +33,12 @@ object DescribedSRAM {
     val uid = 0
 
     val omSRAM = DiplomaticObjectModelAddressing.makeOMSRAM(
-      desc = "mem-" + uid,
+      desc = desc,
       width = data.getWidth,
       depth = size,
       granWidth = granWidth,
-      uid = uid
+      uid = uid,
+      rtlModule = OMRTLModule(moduleName=name)
     )
 
     Annotated.srams(

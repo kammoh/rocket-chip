@@ -103,7 +103,7 @@ val setMake = NotSpace ~ ( Space ~> NotSpace )
 
 lazy val chipSettings = Seq(
   addons := {
-    val a = sys.env.getOrElse("ROCKETCHIP_ADDONS", "")
+    val a = sys.env.getOrElse("ROCKETCHIP_ADDONS", "sha3")
     println(s"Using addons: $a")
     a.split(" ")
   },

@@ -3,12 +3,11 @@
 
 package freechips.rocketchip.tile
 
-import Chisel._
-import chisel3.util.HasBlackBoxResource
+import chisel3._
+import chisel3.util._
 import chisel3.experimental.IntParam
 
 import freechips.rocketchip.config._
-import freechips.rocketchip.subsystem._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.rocket._
 import freechips.rocketchip.tilelink._
@@ -17,35 +16,35 @@ import freechips.rocketchip.util.InOrderArbiter
 case object BuildRoCC extends Field[Seq[Parameters => LazyRoCC]](Nil)
 
 class RoCCInstruction extends Bundle {
-  val funct = Bits(width = 7)
-  val rs2 = Bits(width = 5)
-  val rs1 = Bits(width = 5)
+  val funct = Bits(7.W)
+  val rs2 = Bits(5.W)
+  val rs1 = Bits(5.W)
   val xd = Bool()
   val xs1 = Bool()
   val xs2 = Bool()
-  val rd = Bits(width = 5)
-  val opcode = Bits(width = 7)
+  val rd = Bits(5.W)
+  val opcode = Bits(7.W)
 }
 
 class RoCCCommand(implicit p: Parameters) extends CoreBundle()(p) {
   val inst = new RoCCInstruction
-  val rs1 = Bits(width = xLen)
-  val rs2 = Bits(width = xLen)
+  val rs1 = Bits(xLen.W)
+  val rs2 = Bits(xLen.W)
   val status = new MStatus
 }
 
 class RoCCResponse(implicit p: Parameters) extends CoreBundle()(p) {
-  val rd = Bits(width = 5)
-  val data = Bits(width = xLen)
+  val rd = Bits(5.W)
+  val data = Bits(xLen.W)
 }
 
 class RoCCCoreIO(implicit p: Parameters) extends CoreBundle()(p) {
   val cmd = Decoupled(new RoCCCommand).flip
   val resp = Decoupled(new RoCCResponse)
   val mem = new HellaCacheIO
-  val busy = Bool(OUTPUT)
-  val interrupt = Bool(OUTPUT)
-  val exception = Bool(INPUT)
+  val busy = Output(Bool())
+  val interrupt = Output(Bool())
+  val exception = Input(Bool())
 }
 
 class RoCCIO(val nPTWPorts: Int)(implicit p: Parameters) extends RoCCCoreIO()(p) {
@@ -108,8 +107,8 @@ trait HasLazyRoCCModule extends CanHavePTWModule
         fpu.io.cp_req <> fpArb.io.out_req
         fpArb.io.out_resp <> fpu.io.cp_resp
       } else {
-        fpu.io.cp_req.valid := Bool(false)
-        fpu.io.cp_resp.ready := Bool(false)
+        fpu.io.cp_req.valid := false.B
+        fpu.io.cp_resp.ready := false.B
       }
     }
     (Some(respArb), Some(cmdRouter))
@@ -124,16 +123,16 @@ class AccumulatorExample(opcodes: OpcodeSet, val n: Int = 4)(implicit p: Paramet
 
 class AccumulatorExampleModuleImp(outer: AccumulatorExample)(implicit p: Parameters) extends LazyRoCCModuleImp(outer)
     with HasCoreParameters {
-  val regfile = Mem(outer.n, UInt(width = xLen))
-  val busy = Reg(init = Vec.fill(outer.n){Bool(false)})
+  val regfile = Mem(outer.n, UInt(xLen.W))
+  val busy = RegInit(VecInit(Seq.fill(outer.n){false.B}))
 
   val cmd = Queue(io.cmd)
   val funct = cmd.bits.inst.funct
   val addr = cmd.bits.rs2(log2Up(outer.n)-1,0)
-  val doWrite = funct === UInt(0)
-  val doRead = funct === UInt(1)
-  val doLoad = funct === UInt(2)
-  val doAccum = funct === UInt(3)
+  val doWrite = funct === 0.U
+  val doRead = funct === 1.U
+  val doLoad = funct === 2.U
+  val doAccum = funct === 3.U
   val memRespTag = io.mem.resp.bits.tag(log2Up(outer.n)-1,0)
 
   // datapath
@@ -147,12 +146,12 @@ class AccumulatorExampleModuleImp(outer: AccumulatorExample)(implicit p: Paramet
 
   when (io.mem.resp.valid) {
     regfile(memRespTag) := io.mem.resp.bits.data
-    busy(memRespTag) := Bool(false)
+    busy(memRespTag) := false.B
   }
 
   // control
   when (io.mem.req.fire()) {
-    busy(addr) := Bool(true)
+    busy(addr) := true.B
   }
 
   val doResp = cmd.bits.inst.xd
@@ -173,7 +172,7 @@ class AccumulatorExampleModuleImp(outer: AccumulatorExample)(implicit p: Paramet
 
   io.busy := cmd.valid || busy.reduce(_||_)
     // Be busy when have pending memory requests or committed possibility of pending requests
-  io.interrupt := Bool(false)
+  io.interrupt := false.B
     // Set this true to trigger an interrupt on the processor (please refer to supervisor documentation)
 
   // MEMORY REQUEST INTERFACE
@@ -182,9 +181,9 @@ class AccumulatorExampleModuleImp(outer: AccumulatorExample)(implicit p: Paramet
   io.mem.req.bits.tag := addr
   io.mem.req.bits.cmd := M_XRD // perform a load (M_XWR for stores)
   io.mem.req.bits.size := log2Ceil(8).U
-  io.mem.req.bits.signed := Bool(false)
-  io.mem.req.bits.data := Bits(0) // we're not performing any stores...
-  io.mem.req.bits.phys := Bool(false)
+  io.mem.req.bits.signed := false.B
+  io.mem.req.bits.data := 0.U // we're not performing any stores...
+  io.mem.req.bits.phys := false.B
 }
 
 class  TranslatorExample(opcodes: OpcodeSet)(implicit p: Parameters) extends LazyRoCC(opcodes, nPTWPorts = 1) {
@@ -193,14 +192,14 @@ class  TranslatorExample(opcodes: OpcodeSet)(implicit p: Parameters) extends Laz
 
 class TranslatorExampleModuleImp(outer: TranslatorExample)(implicit p: Parameters) extends LazyRoCCModuleImp(outer)
     with HasCoreParameters {
-  val req_addr = Reg(UInt(width = coreMaxAddrBits))
+  val req_addr = Reg(UInt(coreMaxAddrBits.W))
   val req_rd = Reg(io.resp.bits.rd)
   val req_offset = req_addr(pgIdxBits - 1, 0)
   val req_vpn = req_addr(coreMaxAddrBits - 1, pgIdxBits)
   val pte = Reg(new PTE)
 
-  val s_idle :: s_ptw_req :: s_ptw_resp :: s_resp :: Nil = Enum(Bits(), 4)
-  val state = Reg(init = s_idle)
+  val s_idle :: s_ptw_req :: s_ptw_resp :: s_resp :: Nil = Enum(4)
+  val state = RegInit(s_idle)
 
   io.cmd.ready := (state === s_idle)
 
@@ -227,11 +226,11 @@ class TranslatorExampleModuleImp(outer: TranslatorExample)(implicit p: Parameter
 
   io.resp.valid := (state === s_resp)
   io.resp.bits.rd := req_rd
-  io.resp.bits.data := Mux(pte.leaf(), Cat(pte.ppn, req_offset), SInt(-1, xLen).asUInt)
+  io.resp.bits.data := Mux(pte.leaf(), Cat(pte.ppn, req_offset), -1.S(xLen.W).asUInt)
 
   io.busy := (state =/= s_idle)
-  io.interrupt := Bool(false)
-  io.mem.req.valid := Bool(false)
+  io.interrupt := false.B
+  io.mem.req.valid := false.B
 }
 
 class  CharacterCountExample(opcodes: OpcodeSet)(implicit p: Parameters) extends LazyRoCC(opcodes) {
@@ -247,32 +246,32 @@ class CharacterCountExampleModuleImp(outer: CharacterCountExample)(implicit p: P
   private val blockOffset = blockOffBits
   private val beatOffset = log2Up(cacheDataBits/8)
 
-  val needle = Reg(UInt(width = 8))
-  val addr = Reg(UInt(width = coreMaxAddrBits))
-  val count = Reg(UInt(width = xLen))
+  val needle = Reg(UInt(8.W))
+  val addr = Reg(UInt(coreMaxAddrBits.W))
+  val count = Reg(UInt(xLen.W))
   val resp_rd = Reg(io.resp.bits.rd)
 
   val addr_block = addr(coreMaxAddrBits - 1, blockOffset)
   val offset = addr(blockOffset - 1, 0)
-  val next_addr = (addr_block + UInt(1)) << UInt(blockOffset)
+  val next_addr = (addr_block + 1.U) << blockOffset.U
 
-  val s_idle :: s_acq :: s_gnt :: s_check :: s_resp :: Nil = Enum(Bits(), 5)
-  val state = Reg(init = s_idle)
+  val s_idle :: s_acq :: s_gnt :: s_check :: s_resp :: Nil = Enum( 5)
+  val state = RegInit(s_idle)
 
   val (tl_out, edgesOut) = outer.atlNode.out(0)
   val gnt = tl_out.d.bits
-  val recv_data = Reg(UInt(width = cacheDataBits))
-  val recv_beat = Reg(UInt(width = log2Up(cacheDataBeats+1)), init = UInt(0))
+  val recv_data = Reg(UInt(cacheDataBits.W))
+  val recv_beat = Reg(0.U(log2Up(cacheDataBeats+1)))
 
-  val data_bytes = Vec.tabulate(cacheDataBits/8) { i => recv_data(8 * (i + 1) - 1, 8 * i) }
-  val zero_match = data_bytes.map(_ === UInt(0))
+  val data_bytes = VecInit.tabulate(cacheDataBits/8) { i => recv_data(8 * (i + 1) - 1, 8 * i) }
+  val zero_match = data_bytes.map(_ === 0.U)
   val needle_match = data_bytes.map(_ === needle)
   val first_zero = PriorityEncoder(zero_match)
 
   val chars_found = PopCount(needle_match.zipWithIndex.map {
     case (matches, i) =>
-      val idx = Cat(recv_beat - UInt(1), UInt(i, beatOffset))
-      matches && idx >= offset && UInt(i) <= first_zero
+      val idx = Cat(recv_beat - 1.U, i.U(beatOffset.W))
+      matches && idx >= offset && i.U <= first_zero
   })
   val zero_found = zero_match.reduce(_ || _)
   val finished = Reg(Bool())
@@ -283,24 +282,24 @@ class CharacterCountExampleModuleImp(outer: CharacterCountExample)(implicit p: P
   io.resp.bits.data := count
   tl_out.a.valid := (state === s_acq)
   tl_out.a.bits := edgesOut.Get(
-                       fromSource = UInt(0),
+                       fromSource = 0.U,
                        toAddress = (addr_block << blockOffset).asUInt,
-                       lgSize = UInt(lgCacheBlockBytes))._2
+                       lgSize = lgCacheBlockBytes.U)._2
   tl_out.d.ready := (state === s_gnt)
 
   when (io.cmd.fire()) {
     addr := io.cmd.bits.rs1
     needle := io.cmd.bits.rs2
     resp_rd := io.cmd.bits.inst.rd
-    count := UInt(0)
-    finished := Bool(false)
+    count := 0.U
+    finished := false.B
     state := s_acq
   }
 
   when (tl_out.a.fire()) { state := s_gnt }
 
   when (tl_out.d.fire()) {
-    recv_beat := recv_beat + UInt(1)
+    recv_beat := recv_beat + 1.U
     recv_data := gnt.data
     state := s_check
   }
@@ -309,8 +308,8 @@ class CharacterCountExampleModuleImp(outer: CharacterCountExample)(implicit p: P
     when (!finished) {
       count := count + chars_found
     }
-    when (zero_found) { finished := Bool(true) }
-    when (recv_beat === UInt(cacheDataBeats)) {
+    when (zero_found) { finished := true.B }
+    when (recv_beat === cacheDataBeats.U) {
       addr := next_addr
       state := Mux(zero_found || finished, s_resp, s_acq)
     } .otherwise {
@@ -321,12 +320,12 @@ class CharacterCountExampleModuleImp(outer: CharacterCountExample)(implicit p: P
   when (io.resp.fire()) { state := s_idle }
 
   io.busy := (state =/= s_idle)
-  io.interrupt := Bool(false)
-  io.mem.req.valid := Bool(false)
+  io.interrupt := false.B
+  io.mem.req.valid := false.B
   // Tie off unused channels
-  tl_out.b.ready := Bool(true)
-  tl_out.c.valid := Bool(false)
-  tl_out.e.valid := Bool(false)
+  tl_out.b.ready := true.B
+  tl_out.c.valid := false.B
+  tl_out.e.valid := false.B
 }
 
 class BlackBoxExample(opcodes: OpcodeSet, blackBoxFile: String)(implicit p: Parameters)
@@ -387,10 +386,10 @@ class OpcodeSet(val opcodes: Seq[UInt]) {
 }
 
 object OpcodeSet {
-  def custom0 = new OpcodeSet(Seq(Bits("b0001011")))
-  def custom1 = new OpcodeSet(Seq(Bits("b0101011")))
-  def custom2 = new OpcodeSet(Seq(Bits("b1011011")))
-  def custom3 = new OpcodeSet(Seq(Bits("b1111011")))
+  def custom0 = new OpcodeSet(Seq("b0001011".U))
+  def custom1 = new OpcodeSet(Seq("b0101011".U))
+  def custom2 = new OpcodeSet(Seq("b1011011".U))
+  def custom3 = new OpcodeSet(Seq("b1111011".U))
   def all = custom0 | custom1 | custom2 | custom3
 }
 
@@ -399,7 +398,7 @@ class RoccCommandRouter(opcodes: Seq[OpcodeSet])(implicit p: Parameters)
   val io = new Bundle {
     val in = Decoupled(new RoCCCommand).flip
     val out = Vec(opcodes.size, Decoupled(new RoCCCommand))
-    val busy = Bool(OUTPUT)
+    val busy = Output(Bool())
   }
 
   val cmd = Queue(io.in)
@@ -412,6 +411,5 @@ class RoccCommandRouter(opcodes: Seq[OpcodeSet])(implicit p: Parameters)
   cmd.ready := cmdReadys.reduce(_ || _)
   io.busy := cmd.valid
 
-  assert(PopCount(cmdReadys) <= UInt(1),
-    "Custom opcode matched for more than one accelerator")
+  assert(PopCount(cmdReadys) <= 1.U, "Custom opcode matched for more than one accelerator")
 }
