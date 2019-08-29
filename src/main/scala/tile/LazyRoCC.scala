@@ -39,7 +39,7 @@ class RoCCResponse(implicit p: Parameters) extends CoreBundle()(p) {
 }
 
 class RoCCCoreIO(implicit p: Parameters) extends CoreBundle()(p) {
-  val cmd = Decoupled(new RoCCCommand).flip
+  val cmd = Flipped(Decoupled(new RoCCCommand))
   val resp = Decoupled(new RoCCResponse)
   val mem = new HellaCacheIO
   val busy = Output(Bool())
@@ -50,7 +50,7 @@ class RoCCCoreIO(implicit p: Parameters) extends CoreBundle()(p) {
 class RoCCIO(val nPTWPorts: Int)(implicit p: Parameters) extends RoCCCoreIO()(p) {
   val ptw = Vec(nPTWPorts, new TLBPTWIO)
   val fpu_req = Decoupled(new FPInput)
-  val fpu_resp = Decoupled(new FPResult).flip
+  val fpu_resp = Flipped(Decoupled(new FPResult))
 }
 
 /** Base classes for Diplomatic TL2 RoCC units **/
@@ -396,7 +396,7 @@ object OpcodeSet {
 class RoccCommandRouter(opcodes: Seq[OpcodeSet])(implicit p: Parameters)
     extends CoreModule()(p) {
   val io = new Bundle {
-    val in = Decoupled(new RoCCCommand).flip
+    val in = Flipped(Decoupled(new RoCCCommand))
     val out = Vec(opcodes.size, Decoupled(new RoCCCommand))
     val busy = Output(Bool())
   }

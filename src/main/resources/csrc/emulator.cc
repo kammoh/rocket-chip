@@ -71,7 +71,7 @@ public:
     Verilated::traceEverOn(true); // Verilator must compute traced signals
   }
 
-  int activate(const char *trace_file_name) {
+  void activate(const char *trace_file_name) {
     filename = trace_file_name;
   }
 

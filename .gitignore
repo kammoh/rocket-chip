@@ -8,6 +8,5 @@ project/project
 *.fst
 *.vcd
 emulator/generated-src
-.git
 .idea*
 *.orig
