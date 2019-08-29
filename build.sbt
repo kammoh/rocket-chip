@@ -17,8 +17,8 @@ lazy val commonSettings = Seq(
   traceLevel   := 15,
   scalacOptions ++= Seq("-deprecation","-unchecked","-Xsource:2.11"),
   libraryDependencies ++= Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value),
-  libraryDependencies ++= Seq("org.json4s" %% "json4s-jackson" % "3.6.1"),
-  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+  libraryDependencies ++= Seq("org.json4s" %% "json4s-jackson" % "3.6+"),
+  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
   publishMavenStyle := true,
   publishArtifact in Test := false,
   pomIncludeRepository := { _ => false },
@@ -63,6 +63,7 @@ def dependOnChisel(prj: Project) = {
   }
 }
 
+//lazy val `api-config-chipsalliance` = (project in file("api-config-chipsalliance/design/craft"))
 lazy val `api-config-chipsalliance` = (project in file("api-config-chipsalliance/build-rules/sbt"))
   .settings(commonSettings)
   .settings(publishArtifact := false)
