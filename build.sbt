@@ -1,8 +1,6 @@
 // See LICENSE.Berkeley for license details.
 
-import sbt.complete._
 import sbt.complete.DefaultParsers._
-import xerial.sbt.pack._
 import sys.process._
 
 enablePlugins(PackPlugin)
@@ -17,7 +15,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-deprecation","-unchecked","-Xsource:2.11"),
   libraryDependencies ++= Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value),
   libraryDependencies ++= Seq("org.json4s" %% "json4s-jackson" % "3.6+"),
-  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1+" cross CrossVersion.full),
   resolvers ++= Seq(
     Resolver.sonatypeRepo("snapshots"),
     Resolver.sonatypeRepo("releases"),
@@ -67,23 +65,18 @@ def dependOnChisel(prj: Project) = {
   }
 }
 
-lazy val `api-config-chipsalliance` = (project in file("api-config-chipsalliance/build-rules/sbt"))
-  .settings(commonSettings)
-  .settings(publishArtifact := false)
+
 lazy val hardfloat  = dependOnChisel(project).settings(commonSettings)
   .settings(publishArtifact := false)
 lazy val `rocket-macros` = (project in file("macros")).settings(commonSettings)
   .settings(publishArtifact := false)
 lazy val rocketchip = dependOnChisel(project in file("."))
   .settings(commonSettings, chipSettings)
-  .dependsOn(`api-config-chipsalliance` % "compile-internal;test-internal")
   .dependsOn(hardfloat % "compile-internal;test-internal")
   .dependsOn(`rocket-macros` % "compile-internal;test-internal")
   .settings(
     aggregate := false,
     // Include macro classes, resources, and sources in main jar.
-    mappings in (Compile, packageBin) ++= (mappings in (`api-config-chipsalliance`, Compile, packageBin)).value,
-    mappings in (Compile, packageSrc) ++= (mappings in (`api-config-chipsalliance`, Compile, packageSrc)).value,
     mappings in (Compile, packageBin) ++= (mappings in(hardfloat, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in(hardfloat, Compile, packageSrc)).value,
     mappings in (Compile, packageBin) ++= (mappings in(`rocket-macros`, Compile, packageBin)).value,
@@ -95,7 +88,7 @@ lazy val rocketchip = dependOnChisel(project in file("."))
       "org.scalatest" %% "scalatest" % "3.0.+" % Test,
       "org.scalacheck" %% "scalacheck" % "1.14.+" % Test,
       "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-      "org.scalatra.scalate" %% "scalate-core" % "1.9.4+" % Test,
+      "org.scalatra.scalate" %% "scalate-core" % "1.9.4+",
       "com.lihaoyi" %% "os-lib" % "0.3+"
     )
   )
