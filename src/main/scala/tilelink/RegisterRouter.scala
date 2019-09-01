@@ -10,7 +10,7 @@ import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.diplomaticobjectmodel.model.{OMMemoryRegion, OMRegister, OMRegisterMap}
 import freechips.rocketchip.regmapper._
 import freechips.rocketchip.interrupts._
-import freechips.rocketchip.util.{ElaborationArtefacts, GenRegDescsAnno, HeterogeneousBag}
+import freechips.rocketchip.util.{ElaborationArtifacts, GenRegDescsAnno, HeterogeneousBag}
 
 import scala.math.{max, min}
 
@@ -100,10 +100,10 @@ case class TLRegisterNode(
     val name = s"deviceAt${baseHex}" //TODO: It would be better to name this other than "Device at ...."
     val json = GenRegDescsAnno.serialize(base, name, mapping:_*)
     var suffix = 0
-    while( ElaborationArtefacts.contains(s"${baseHex}.${suffix}.regmap.json")) {
+    while( ElaborationArtifacts.contains(s"${baseHex}.${suffix}.regmap.json")) {
       suffix = suffix + 1
     }
-    ElaborationArtefacts.add(s"${baseHex}.${suffix}.regmap.json", json)
+    ElaborationArtifacts.add(s"${baseHex}.${suffix}.regmap.json", json)
 
     val module = Module.currentModule.get.asInstanceOf[RawModule]
     GenRegDescsAnno.anno(

@@ -1,31 +1,20 @@
-set MAX_CORES                     4
-
-set DESIGN_NAME                   "{{top_module_name}}"  ;#  The name of the top-level design
-
-set CLOCK_NET                     clk
-set CLOCK_NAME                    ideal_clock
-set CLOCK_PERIOD                  6.000
-
-##########################################################################################
-# Hierarchical Flow Design Variables
-##########################################################################################
+set MAX_CORES                     {{max_cores}}
+set DESIGN_NAME                   "{{top_module_name}}"
+set CLOCK_NET                     {{clock_net}}
+set CLOCK_NAME                    main_clock
+set CLOCK_PERIOD                  {{clock_period}}
 
 set HIERARCHICAL_DESIGNS           "" ;# List of hierarchical block design names "DesignA DesignB" ...
 set HIERARCHICAL_CELLS             "" ;# List of hierarchical block cell instance names "u_DesignA u_DesignB" ...
 
-##########################################################################################
-# Library Setup Variables
-##########################################################################################
-
 # For the following variables, use a blank space to separate multiple entries.
-# Example: set TARGET_LIBRARY_FILES "lib1.db lib2.db lib3.db"
 
-set RTK_PATH                      "/src/SAED32nm/rvt_tt_1p05v_25c" ;
+set RTK_PATH                      "{{rtk_path}}" ;
 
-set ADDITIONAL_SEARCH_PATH        "${RTK_PATH}"  ;#  Additional search path to be added to the default search path
+set ADDITIONAL_SEARCH_PATH        "${RTK_PATH}"
 
 set TARGET_LIBRARY_FILES          "${RTK_PATH}/saed32rvt_tt1p05v25c.db"  ;#  Target technology logical libraries
-# set ADDITIONAL_LINK_LIB_FILES     "[glob ${RTK_PATH}/SRAM*.db]"  ;#  Extra link logical libraries not included in TARGET_LIBRARY_FILES
+# set ADDITIONAL_LINK_LIB_FILES   "[glob ${RTK_PATH}/SRAM*.db]"  ;#  Extra link logical libraries not included in TARGET_LIBRARY_FILES
 set ADDITIONAL_LINK_LIB_FILES     "${RTK_PATH}/saed32sram_tt1p05v25c.db"  ;#  Extra link logical libraries not included in TARGET_LIBRARY_FILES
 
 set MIN_LIBRARY_FILES             ""  ;#  List of max min library pairs "max1 min1 max2 min2 max3 min3"...
@@ -47,9 +36,8 @@ set LIBRARY_DONT_USE_PRE_COMPILE_LIST ""; #Tcl file for customized don't use lis
 set LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST "";# Tcl file with library modifications for dont_use before incr compile
 
 
-
 # This constraint sets the input drive strength of the input pins of
-# your design. We specifiy a specific standard cell which models what
+# your design. We specify a specific standard cell which models what
 # would be driving the inputs. This should usually be a small inverter
 # which is reasonable if another block of on-chip logic is driving
 # your inputs.
@@ -278,21 +266,9 @@ file mkdir ${RESULTS_DIR}
 #High Connectivity (hc)
 #Runtime Exploration (rtm_exp)
 
-set OPTIMIZATION_FLOW  "{{synth_options.optimization_flow}}" ;# Specify one flow out of hplp | hc | rtm_exp
-#################################################################################
-# Search Path Setup
-#
-# Set up the search path to find the libraries and design files.
-#################################################################################
+set OPTIMIZATION_FLOW  "{{optimization_flow}}" ;# Specify one flow out of hplp | hc | rtm_exp
 
   set_app_var search_path ". ${ADDITIONAL_SEARCH_PATH} $search_path"
-
-#################################################################################
-# Library Setup
-#
-# This section is designed to work with the settings from common_setup.tcl
-# without any additional modification.
-#################################################################################
 
   # Milkyway variable settings
 
@@ -370,13 +346,6 @@ if {![shell_is_in_topographical_mode]} {
   exit 1
 }
 
-#################################################################################
-# Additional Variables
-#
-# Add any additional variables needed for your flow here.
-#################################################################################
-
-
 ################################################################################
 # You can enable inference of multibit registers from the buses defined in the RTL.
 # The replacement of single-bit cells with multibit library cells occurs during execution
@@ -444,20 +413,15 @@ saif_map -start
 
 define_design_lib WORK -path ./WORK
 
-{% for lib_name,lib_path in hdl_libraries.items() %}
-define_design_lib  -path {{lib_path}}  {{lib_name}}
-{% endfor %}
-
 ###The following variable helps verification when there are differences between DC and FM while inferring logical hierarchies
 set_app_var hdlin_enable_hier_map true
 
 
-{% macro language_format(source) -%}
-    {%if source.language.lower().startswith('vhdl') %} vhdl {% else %} verilog {%endif%}
-{%- endmacro %}
-
 {{#verilog_sources}}
-    analyze -format verilog {{path}}
+    if {[catch {analyze -format sverilog {{path}} } msg]} {
+        puts stderr "[ERROR]: analyze of  {{path}} failed : $msg"
+        exit 2
+    }
 {{/verilog_sources}}
 
 
@@ -863,7 +827,7 @@ if { $OPTIMIZATION_FLOW == "hplp"} {
 #
 # Recommended Options:
 #
-#     -scan
+#     -scanm
 #     -gate_clock (-self_gating)
 #     -retime
 #     -spg
@@ -988,10 +952,20 @@ compile_prefer_runtime
 # libraries and design are complete and that optimization will not fail
 # in topographical mode.  Use the same options as will be used in compile_ultra.
 
-#compile_ultra -spg -check_only
+# FIXME add spg, retime, grouping back
+#compile_ultra -spg -retime -no_autoungroup
 
-compile_ultra -spg
-
+if { $OPTIMIZATION_FLOW == "rtm_exp"} {
+    if {[catch compile -auto_ungroup delay} msg]} {
+        puts stderr "[ERROR]: compile failed : $msg"
+        exit 2
+    }
+} else {
+    if {[catch compile_ultra -gate_clock -spg -retime} msg]} {
+        puts stderr "[ERROR]: compile failed : $msg"
+        exit 2
+    }
+}
 
 set_driving_cell -lib_cell NBUFFX16 -pin Z [get_ports ${CLOCK_NET}]
 
@@ -1057,7 +1031,11 @@ if {[file exists [which ${LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST}]]} {
 # Incremental compile is also recommended for final QoR signoff as well
 #########################################################################
 
-compile_ultra -incremental -spg
+
+if {[catch compile_ultra  -incremental -spg -retime -gate_clock -spg -retime} msg]} {
+    puts stderr "[ERROR]: compile_ultra (incremental) failed : $msg"
+    exit 2
+}
 
 ################################################################################
 # Remove the path groups generated by create_path_groups command.
@@ -1077,77 +1055,13 @@ if { $OPTIMIZATION_FLOW == "hplp" } {
 
 optimize_netlist -area
 }
-#################################################################################
-# Write Out Final Design and Reports
-#
-#        .ddc:   Recommended binary format used for subsequent Design Compiler sessions
-#    Milkyway:   Recommended binary format for IC Compiler
-#        .v  :   Verilog netlist for ASCII flow (Formality, PrimeTime, VCS)
-#       .spef:   Topographical mode parasitics for PrimeTime
-#        .sdf:   SDF backannotated topographical mode timing for PrimeTime
-#        .sdc:   SDC constraints for ASCII flow
-#
-#################################################################################
-
-change_names -rules verilog -hierarchy
-
-write_icc2_files -force  -output ${RESULTS_DIR}/${DCRM_FINAL_DESIGN_ICC2}
-
-
-#################################################################################
-# Write out Design
-#################################################################################
-
-write -format verilog -hierarchy -output ${RESULTS_DIR}/${DCRM_FINAL_VERILOG_OUTPUT_FILE}
-
-write -format ddc     -hierarchy -output ${RESULTS_DIR}/${DCRM_FINAL_DDC_OUTPUT_FILE}
-
-
-# Write and close SVF file and make it available for immediate use
-set_svf -off
-
-#################################################################################
-# Write out Design Data
-#################################################################################
-
-
-  # Note: A secondary floorplan file ${DCRM_DCT_FINAL_FLOORPLAN_OUTPUT_FILE}.objects
-  #       might also be written to capture physical-only objects in the design.
-  #       This file should be read in before reading the main floorplan file.
-
-  write_floorplan -all ${RESULTS_DIR}/${DCRM_DCT_FINAL_FLOORPLAN_OUTPUT_FILE}
-
-  # If the DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE variable has been set in dc_setup_filenames.tcl
-  # file then the standard cell physical guidance is being created to support SPG ASCII hand-off
-  # to IC Compiler by the write_def command.
-  # Invoking write_def commands requires a Design Compiler Graphical license or an IC Compiler
-  # Design Planning license.
-
-  if {[info exists DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE]} {
-    write_def -components -output ${RESULTS_DIR}/${DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE}
-  }
-
-  # Write parasitics data from Design Compiler Topographical placement for static timing analysis
-  write_parasitics -output ${RESULTS_DIR}/${DCRM_DCT_FINAL_SPEF_OUTPUT_FILE}
-
-  # Write SDF backannotation data from Design Compiler Topographical placement for static timing analysis
-  write_sdf ${RESULTS_DIR}/${DCRM_DCT_FINAL_SDF_OUTPUT_FILE}
-
-  # Do not write out net RC info into SDC
-  set_app_var write_sdc_output_lumped_net_capacitance false
-  set_app_var write_sdc_output_net_resistance false
-
-write_sdc -nosplit ${RESULTS_DIR}/${DCRM_FINAL_SDC_OUTPUT_FILE}
-
-# If SAIF is used, write out SAIF name mapping file for PrimeTime-PX
- saif_map -type ptpx -write_map ${RESULTS_DIR}/${DESIGN_NAME}.mapped.SAIF.namemap
 
 #################################################################################
 # Generate Final Reports
 #################################################################################
 
 # set_host_options -max_cores $MAX_CORES
-# update_timing
+update_timing
 
 
 # Report units
@@ -1288,6 +1202,71 @@ puts "Information: The DISPLAY environment variable is not set. Congestion map g
 }
 
 
+#################################################################################
+# Write Out Final Design and Reports
+#
+#        .ddc:   Recommended binary format used for subsequent Design Compiler sessions
+#    Milkyway:   Recommended binary format for IC Compiler
+#        .v  :   Verilog netlist for ASCII flow (Formality, PrimeTime, VCS)
+#       .spef:   Topographical mode parasitics for PrimeTime
+#        .sdf:   SDF backannotated topographical mode timing for PrimeTime
+#        .sdc:   SDC constraints for ASCII flow
+#
+#################################################################################
+
+change_names -rules verilog -hierarchy
+
+write_icc2_files -force  -output ${RESULTS_DIR}/${DCRM_FINAL_DESIGN_ICC2}
+
+
+#################################################################################
+# Write out Design
+#################################################################################
+
+write -format verilog -hierarchy -output ${RESULTS_DIR}/${DCRM_FINAL_VERILOG_OUTPUT_FILE}
+
+write -format ddc     -hierarchy -output ${RESULTS_DIR}/${DCRM_FINAL_DDC_OUTPUT_FILE}
+
+
+# Write and close SVF file and make it available for immediate use
+set_svf -off
+
+#################################################################################
+# Write out Design Data
+#################################################################################
+
+
+  # Note: A secondary floorplan file ${DCRM_DCT_FINAL_FLOORPLAN_OUTPUT_FILE}.objects
+  #       might also be written to capture physical-only objects in the design.
+  #       This file should be read in before reading the main floorplan file.
+
+  write_floorplan -all ${RESULTS_DIR}/${DCRM_DCT_FINAL_FLOORPLAN_OUTPUT_FILE}
+
+  # If the DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE variable has been set in dc_setup_filenames.tcl
+  # file then the standard cell physical guidance is being created to support SPG ASCII hand-off
+  # to IC Compiler by the write_def command.
+  # Invoking write_def commands requires a Design Compiler Graphical license or an IC Compiler
+  # Design Planning license.
+
+  if {[info exists DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE]} {
+    write_def -components -output ${RESULTS_DIR}/${DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE}
+  }
+
+  # Write parasitics data from Design Compiler Topographical placement for static timing analysis
+  write_parasitics -output ${RESULTS_DIR}/${DCRM_DCT_FINAL_SPEF_OUTPUT_FILE}
+
+  # Write SDF backannotation data from Design Compiler Topographical placement for static timing analysis
+  write_sdf ${RESULTS_DIR}/${DCRM_DCT_FINAL_SDF_OUTPUT_FILE}
+
+  # Do not write out net RC info into SDC
+  set_app_var write_sdc_output_lumped_net_capacitance false
+  set_app_var write_sdc_output_net_resistance false
+
+write_sdc -nosplit ${RESULTS_DIR}/${DCRM_FINAL_SDC_OUTPUT_FILE}
+
+# If SAIF is used, write out SAIF name mapping file for PrimeTime-PX
+ saif_map -type ptpx -write_map ${RESULTS_DIR}/${DESIGN_NAME}.mapped.SAIF.namemap
+
 
 #################################################################################
 # Write out Milkyway Design for Top-Down Flow
@@ -1297,6 +1276,7 @@ puts "Information: The DISPLAY environment variable is not set. Congestion map g
 
 # write_milkyway uses mw_design_library variable from dc_setup.tcl
 write_milkyway -overwrite -output ${DCRM_FINAL_MW_CEL_NAME}
+
 
 #-------------------------------------------------------------------------
 # Post-synthesis plugin

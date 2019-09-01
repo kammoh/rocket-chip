@@ -7,6 +7,8 @@ import Chisel._
 import freechips.rocketchip.config.Config
 import freechips.rocketchip.subsystem._
 import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.rocket.{DCacheParams, ICacheParams, RocketCoreParams}
+import freechips.rocketchip.tile.RocketTileParams
 
 class WithJtagDTMSystem extends freechips.rocketchip.subsystem.WithJtagDTM
 class WithDebugSBASystem extends freechips.rocketchip.subsystem.WithDebugSBA
@@ -80,6 +82,28 @@ class MMIOPortOnlyConfig extends Config(
 )
 
 class BaseFPGAConfig extends Config(new BaseConfig)
+
+class WithNSmallCores(n: Int) extends Config((site, here, up) => {
+  case RocketTilesKey => {
+    val small = RocketTileParams(
+      core = RocketCoreParams(useVM = false, fpu = None),
+      btb = None,
+      dcache = Some(DCacheParams(
+        rowBits = site(SystemBusKey).beatBits,
+        nSets = 64,
+        nWays = 1,
+        nTLBEntries = 4,
+        nMSHRs = 0,
+        blockBytes = site(CacheBlockBytes))),
+      icache = Some(ICacheParams(
+        rowBits = site(SystemBusKey).beatBits,
+        nSets = 64,
+        nWays = 1,
+        nTLBEntries = 4,
+        blockBytes = site(CacheBlockBytes))))
+    List.tabulate(n)(i => small.copy(hartId = i))
+  }
+})
 
 class DefaultFPGAConfig extends Config(new WithNSmallCores(1) ++ new BaseFPGAConfig)
 class DefaultFPGASmallConfig extends Config(new DefaultFPGAConfig)

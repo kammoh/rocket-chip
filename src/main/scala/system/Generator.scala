@@ -92,5 +92,5 @@ object Generator extends GeneratorApp {
   generateAnno
   generateTestSuiteMakefrags
   generateROMs
-  generateArtefacts
+  generateArtifacts
 }

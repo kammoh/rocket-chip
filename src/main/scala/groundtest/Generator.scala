@@ -8,5 +8,5 @@ object Generator extends GeneratorApp {
   generateFirrtl
   generateAnno
   generateTestSuiteMakefrags // TODO: Needed only for legacy make targets
-  generateArtefacts
+  generateArtifacts
 }

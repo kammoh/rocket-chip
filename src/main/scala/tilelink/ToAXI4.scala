@@ -103,7 +103,7 @@ class TLToAXI4(val combinational: Boolean = true, val adapterName: Option[String
 
       adapterName.foreach { n =>
         println(s"$n AXI4-ID <= TL-Source mapping:\n${map.pretty}\n")
-        ElaborationArtefacts.add(s"$n.axi4.json", s"""{"mapping":[${map.mapping.mkString(",")}]}""")
+        ElaborationArtifacts.add(s"$n.axi4.json", s"""{"mapping":[${map.mapping.mkString(",")}]}""")
       }
 
       // We need to keep the following state from A => D: (size, source)

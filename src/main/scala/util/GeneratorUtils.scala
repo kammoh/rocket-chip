@@ -136,8 +136,8 @@ trait GeneratorApp extends App with HasGeneratorUtilities {
   }
 
   /** Output files created as a side-effect of elaboration */
-  def generateArtefacts {
-    ElaborationArtefacts.files.foreach { case (extension, contents) =>
+  def generateArtifacts {
+    ElaborationArtifacts.files.foreach { case (extension, contents) =>
       writeOutputFile(td, s"$longName.$extension", contents ())
     }
   }
@@ -151,7 +151,7 @@ trait GeneratorApp extends App with HasGeneratorUtilities {
   }
 }
 
-object ElaborationArtefacts {
+object ElaborationArtifacts {
   var files: Seq[(String, () => String)] = Nil
 
   def add(extension: String, contents: => String) {

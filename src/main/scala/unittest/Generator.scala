@@ -6,5 +6,5 @@ object Generator extends freechips.rocketchip.util.GeneratorApp {
   generateFirrtl
   generateAnno
   generateTestSuiteMakefrags // TODO: Needed only for legacy make targets
-  generateArtefacts
+  generateArtifacts
 }

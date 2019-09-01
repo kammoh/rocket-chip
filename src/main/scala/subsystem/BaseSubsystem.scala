@@ -29,10 +29,10 @@ abstract class BareSubsystem(implicit p: Parameters) extends LazyModule with Bin
 
 abstract class BareSubsystemModuleImp[+L <: BareSubsystem](_outer: L) extends LazyModuleImp(_outer) {
   val outer = _outer
-  ElaborationArtefacts.add("graphml", outer.graphML)
-  ElaborationArtefacts.add("dts", outer.dts)
-  ElaborationArtefacts.add("json", outer.json)
-  ElaborationArtefacts.add("plusArgs", PlusArgArtefacts.serialize_cHeader)
+  ElaborationArtifacts.add("graphml", outer.graphML)
+  ElaborationArtifacts.add("dts", outer.dts)
+  ElaborationArtifacts.add("json", outer.json)
+  ElaborationArtifacts.add("plusArgs", PlusArgArtefacts.serialize_cHeader)
   println(outer.dts)
 }
 
@@ -107,7 +107,7 @@ abstract class BaseSubsystemModuleImp[+L <: BaseSubsystem](_outer: L) extends Ba
   mapping.map(entry => println(entry.toString((outer.sbus.busView.bundle.addressBits-1)/4 + 1)))
   println("")
 
-  ElaborationArtefacts.add("memmap.json", s"""{"mapping":[${mapping.map(_.toJSON).mkString(",")}]}""")
+  ElaborationArtifacts.add("memmap.json", s"""{"mapping":[${mapping.map(_.toJSON).mkString(",")}]}""")
 
   // Confirm that all of memory was described by DTS
   private val dtsRanges = AddressRange.unify(mapping.map(_.range))

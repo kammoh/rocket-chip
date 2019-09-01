@@ -22,7 +22,7 @@ trait UnitTestLegacyModule extends HasUnitTestIO {
 
 trait UnitTestModule extends MultiIOModule with HasUnitTestIO {
   val io = IO(new Bundle with UnitTestIO)
-  ElaborationArtefacts.add("plusArgs", PlusArgArtefacts.serialize_cHeader)
+  ElaborationArtifacts.add("plusArgs", PlusArgArtefacts.serialize_cHeader)
 }
 
 abstract class UnitTest(val timeout: Int = 4096) extends Module with UnitTestLegacyModule {
