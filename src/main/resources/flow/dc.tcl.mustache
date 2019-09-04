@@ -1,7 +1,7 @@
 set MAX_CORES                     {{max_cores}}
 set DESIGN_NAME                   "{{top_module_name}}"
 set CLOCK_NET                     {{clock_net}}
-set CLOCK_NAME                    main_clock
+set CLOCK_NAME                    "main_clock"
 set CLOCK_PERIOD                  {{clock_period}}
 
 set HIERARCHICAL_DESIGNS           "" ;# List of hierarchical block design names "DesignA DesignB" ...
@@ -9,24 +9,22 @@ set HIERARCHICAL_CELLS             "" ;# List of hierarchical block cell instanc
 
 # For the following variables, use a blank space to separate multiple entries.
 
-set RTK_PATH                      "{{rtk_path}}" ;
+set RTK_PATH                      "{{{rtk_path}}}" ;
 
 set ADDITIONAL_SEARCH_PATH        "${RTK_PATH}"
 
-set TARGET_LIBRARY_FILES          "${RTK_PATH}/saed32rvt_tt1p05v25c.db"  ;#  Target technology logical libraries
-# set ADDITIONAL_LINK_LIB_FILES   "[glob ${RTK_PATH}/SRAM*.db]"  ;#  Extra link logical libraries not included in TARGET_LIBRARY_FILES
-set ADDITIONAL_LINK_LIB_FILES     "${RTK_PATH}/saed32sram_tt1p05v25c.db"  ;#  Extra link logical libraries not included in TARGET_LIBRARY_FILES
+set TARGET_LIBRARY_FILES          "{{#target_library_files}}${RTK_PATH}/{{.}} {{/target_library_files}}"
+set ADDITIONAL_LINK_LIB_FILES     "{{#additional_link_lib_files}}${RTK_PATH}/{{.}} {{/additional_link_lib_files}}"
 
 set MIN_LIBRARY_FILES             ""  ;#  List of max min library pairs "max1 min1 max2 min2 max3 min3"...
 
-set MW_REFERENCE_LIB_DIRS         "${RTK_PATH}/saed32nm_rvt_1p9m.mwlib ${RTK_PATH}/saed32sram.mwlib "  ;#  Milkyway reference libraries (include IC Compiler ILMs here)
+set MW_REFERENCE_LIB_DIRS         "{{#mw_reference_lib_dirs}}${RTK_PATH}/{{.}} {{/mw_reference_lib_dirs}}"
+set MW_REFERENCE_CONTROL_FILE     "{{MW_REFERENCE_CONTROL_FILE}}" ;#  Reference Control file to define the Milkyway reference libs
 
-set MW_REFERENCE_CONTROL_FILE     ""  ;#  Reference Control file to define the Milkyway reference libs
-
-set TECH_FILE                     "${RTK_PATH}/saed32nm_1p9m_mw.tf"  ;#  Milkyway technology file
-set MAP_FILE                      "${RTK_PATH}/saed32nm_tf_itf_tluplus.map"  ;#  Mapping file for TLUplus
-set TLUPLUS_MAX_FILE              "${RTK_PATH}/saed32nm_1p9m_Cmax.tluplus"  ;#  Max TLUplus file
-set TLUPLUS_MIN_FILE              "${RTK_PATH}/saed32nm_1p9m_Cmin.tluplus"  ;#  Min TLUplus file
+set TECH_FILE                     "{{#tech_file}}${RTK_PATH}/{{.}}{{/tech_file}}" ;#  Milkyway technology file
+set MAP_FILE                      "{{#map_file}}${RTK_PATH}/{{.}}{{/map_file}}" ;#  Mapping file for TLUplus
+set TLUPLUS_MAX_FILE              "{{#tluplus_max_file}}${RTK_PATH}/{{.}}{{/tluplus_max_file}}" ;#  Max TLUplus file
+set TLUPLUS_MIN_FILE              "{{#tluplus_min_file}}${RTK_PATH}/{{.}}{{/tluplus_min_file}}" ;#  Min TLUplus file
 
 set MIN_ROUTING_LAYER            ""   ;# Min routing layer
 set MAX_ROUTING_LAYER            ""   ;# Max routing layer
@@ -41,11 +39,12 @@ set LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST "";# Tcl file with library modificati
 # would be driving the inputs. This should usually be a small inverter
 # which is reasonable if another block of on-chip logic is driving
 # your inputs.
-set ADK_DRIVING_CELL                "INVX1"
+set ADK_DRIVING_CELL                {{adk_driving_cell}}
+set ADK_CLOCK_DRIVING_CELL          {{adk_clock_driving_cell}}
 
 # This constraint sets the load capacitance in picofarads of the
 # output pins of your design.
-set ADK_TYPICAL_ON_CHIP_LOAD        0.005
+set ADK_TYPICAL_ON_CHIP_LOAD        {{adk_typical_on_chip_load}}
 
 
 set dc_post_synthesis_plugin "./scripts/dc/post_synthesis.tcl"
@@ -74,89 +73,59 @@ set PD4                          ""           ;# Name of power domain/voltage ar
 set VA4_COORDINATES              {}           ;# Coordinates for voltage area 4
 set MW_POWER_NET4                "VDD4"       ;# Power net for voltage area 4
 
-
-#################################################################################
-# Use this file to customize the filenames used in the Design Compiler
-# Reference Methodology scripts.  This file is designed to be sourced at the
-# beginning of the dc_setup.tcl file after sourcing the common_setup.tcl file.
-#
-# Note that the variables presented in this file depend on the type of flow
-# selected when generating the reference methodology files.
-#
-# Example.
-#    If you set DFT flow as FALSE, you will not see DFT related filename
-#    variables in this file.
-#
-# When reusing this file for different flows or newer release, ensure that
-# all the required filename variables are defined.  One way to do this is
-# to source the default dc_setup_filenames.tcl file and then override the
-# default settings as needed for your design.
-#
-# The default values are backwards compatible with older
-# Design Compiler Reference Methodology releases.
-#
-# Note: Care should be taken when modifying the names of output files
-#       that are used in other scripts or tools.
-#################################################################################
-
-#################################################################################
-# General Flow Files
-#################################################################################
-
 ##########################
 # Milkyway Library Names #
 ##########################
-
-set DCRM_MW_LIBRARY_NAME                                ${DESIGN_NAME}_LIB
-set DCRM_FINAL_MW_CEL_NAME                              ${DESIGN_NAME}_DCT
+set DC_MW_LIBRARY_NAME                                ${DESIGN_NAME}_LIB
+set DC_FINAL_MW_CEL_NAME                              ${DESIGN_NAME}_DCT
 
 ###############
 # Input Files #
 ###############
 
-set DCRM_SDC_INPUT_FILE                                 ${DESIGN_NAME}.sdc
-set DCRM_CONSTRAINTS_INPUT_FILE                         ${DESIGN_NAME}.constraints.tcl
+set DC_SDC_INPUT_FILE                                 ${DESIGN_NAME}.sdc
+set DC_CONSTRAINTS_INPUT_FILE                         ${DESIGN_NAME}.constraints.tcl
 
 ###########
 # Reports #
 ###########
 
-set DCRM_CHECK_LIBRARY_REPORT                           ${DESIGN_NAME}.check_library.rpt
+set DC_CHECK_LIBRARY_REPORT                           ${DESIGN_NAME}.check_library.rpt
 
-set DCRM_CONSISTENCY_CHECK_ENV_FILE                     ${DESIGN_NAME}.compile_ultra.env
-set DCRM_CHECK_DESIGN_REPORT                            ${DESIGN_NAME}.check_design.rpt
-set DCRM_ANALYZE_DATAPATH_EXTRACTION_REPORT             ${DESIGN_NAME}.analyze_datapath_extraction.rpt
+set DC_CONSISTENCY_CHECK_ENV_FILE                     ${DESIGN_NAME}.compile_ultra.env
+set DC_CHECK_DESIGN_REPORT                            ${DESIGN_NAME}.check_design.rpt
+set DC_ANALYZE_DATAPATH_EXTRACTION_REPORT             ${DESIGN_NAME}.analyze_datapath_extraction.rpt
 
-set DCRM_FINAL_QOR_REPORT                               ${DESIGN_NAME}.mapped.qor.rpt
-set DCRM_FINAL_UNITS                                    ${DESIGN_NAME}.mapped.units.rpt
-set DCRM_FINAL_TIMING_REPORT                            ${DESIGN_NAME}.mapped.timing.rpt
-set DCRM_FINAL_AREA_REPORT                              ${DESIGN_NAME}.mapped.area.rpt
-set DCRM_FINAL_POWER_REPORT                             ${DESIGN_NAME}.mapped.power.rpt
-set DCRM_FINAL_CLOCK_GATING_REPORT                      ${DESIGN_NAME}.mapped.clock_gating.rpt
-set DCRM_FINAL_SELF_GATING_REPORT                       ${DESIGN_NAME}.mapped.self_gating.rpt
-set DCRM_THRESHOLD_VOLTAGE_GROUP_REPORT                 ${DESIGN_NAME}.mapped.threshold.voltage.group.rpt
-set DCRM_INSTANTIATE_CLOCK_GATES_REPORT                 ${DESIGN_NAME}.instatiate_clock_gates.rpt
-set DCRM_FINAL_DESIGNWARE_AREA_REPORT                   ${DESIGN_NAME}.mapped.designware_area.rpt
-set DCRM_FINAL_RESOURCES_REPORT                         ${DESIGN_NAME}.mapped.final_resources.rpt
+set DC_FINAL_QOR_REPORT                               ${DESIGN_NAME}.mapped.qor.rpt
+set DC_FINAL_UNITS                                    ${DESIGN_NAME}.mapped.units.rpt
+set DC_FINAL_TIMING_REPORT                            ${DESIGN_NAME}.mapped.timing.rpt
+set DC_FINAL_AREA_REPORT                              ${DESIGN_NAME}.mapped.area.rpt
+set DC_FINAL_POWER_REPORT                             ${DESIGN_NAME}.mapped.power.rpt
+set DC_FINAL_CLOCK_GATING_REPORT                      ${DESIGN_NAME}.mapped.clock_gating.rpt
+set DC_FINAL_SELF_GATING_REPORT                       ${DESIGN_NAME}.mapped.self_gating.rpt
+set DC_THRESHOLD_VOLTAGE_GROUP_REPORT                 ${DESIGN_NAME}.mapped.threshold.voltage.group.rpt
+set DC_INSTANTIATE_CLOCK_GATES_REPORT                 ${DESIGN_NAME}.instatiate_clock_gates.rpt
+set DC_FINAL_DESIGNWARE_AREA_REPORT                   ${DESIGN_NAME}.mapped.designware_area.rpt
+set DC_FINAL_RESOURCES_REPORT                         ${DESIGN_NAME}.mapped.final_resources.rpt
 
-set DCRM_MULTIBIT_CREATE_REGISTER_BANK_FILE             ${DESIGN_NAME}.register_bank.rpt
-set DCRM_MULTIBIT_CREATE_REGISTER_BANK_REPORT           ${DESIGN_NAME}.register_bank_report_file.rpt
-set DCRM_MULTIBIT_COMPONENTS_REPORT                     ${DESIGN_NAME}.multibit.components.rpt
-set DCRM_MULTIBIT_BANKING_REPORT                        ${DESIGN_NAME}.multibit.banking.rpt
+set DC_MULTIBIT_CREATE_REGISTER_BANK_FILE             ${DESIGN_NAME}.register_bank.rpt
+set DC_MULTIBIT_CREATE_REGISTER_BANK_REPORT           ${DESIGN_NAME}.register_bank_report_file.rpt
+set DC_MULTIBIT_COMPONENTS_REPORT                     ${DESIGN_NAME}.multibit.components.rpt
+set DC_MULTIBIT_BANKING_REPORT                        ${DESIGN_NAME}.multibit.banking.rpt
 
 
 ################
 # Output Files #
 ################
 
-set DCRM_AUTOREAD_RTL_SCRIPT                            ${DESIGN_NAME}.autoread_rtl.tcl
-set DCRM_ELABORATED_DESIGN_DDC_OUTPUT_FILE              ${DESIGN_NAME}.elab.ddc
-set DCRM_COMPILE_ULTRA_DDC_OUTPUT_FILE                  ${DESIGN_NAME}.compile_ultra.ddc
-set DCRM_FINAL_DDC_OUTPUT_FILE                          ${DESIGN_NAME}.mapped.ddc
-set DCRM_FINAL_PG_VERILOG_OUTPUT_FILE                   ${DESIGN_NAME}.mapped.pg.v
-set DCRM_FINAL_VERILOG_OUTPUT_FILE                      ${DESIGN_NAME}.mapped.v
-set DCRM_FINAL_SDC_OUTPUT_FILE                          ${DESIGN_NAME}.mapped.sdc
-set DCRM_FINAL_DESIGN_ICC2                              ICC2_files
+set DC_AUTOREAD_RTL_SCRIPT                            ${DESIGN_NAME}.autoread_rtl.tcl
+set DC_ELABORATED_DESIGN_DDC_OUTPUT_FILE              ${DESIGN_NAME}.elab.ddc
+set DC_COMPILE_ULTRA_DDC_OUTPUT_FILE                  ${DESIGN_NAME}.compile_ultra.ddc
+set DC_FINAL_DDC_OUTPUT_FILE                          ${DESIGN_NAME}.mapped.ddc
+set DC_FINAL_PG_VERILOG_OUTPUT_FILE                   ${DESIGN_NAME}.mapped.pg.v
+set DC_FINAL_VERILOG_OUTPUT_FILE                      ${DESIGN_NAME}.mapped.v
+set DC_FINAL_SDC_OUTPUT_FILE                          ${DESIGN_NAME}.mapped.sdc
+set DC_FINAL_DESIGN_ICC2                              ICC2_files
 
 
 #################################################################################
@@ -167,46 +136,46 @@ set DCRM_FINAL_DESIGN_ICC2                              ICC2_files
 # DCT Input Files #
 ###################
 
-set DCRM_DCT_DEF_INPUT_FILE                             ${DESIGN_NAME}.def
-set DCRM_DCT_FLOORPLAN_INPUT_FILE                       ${DESIGN_NAME}.fp
-set DCRM_DCT_PHYSICAL_CONSTRAINTS_INPUT_FILE            ${DESIGN_NAME}.physical_constraints.tcl
+set DC_DCT_DEF_INPUT_FILE                             ${DESIGN_NAME}.def
+set DC_DCT_FLOORPLAN_INPUT_FILE                       ${DESIGN_NAME}.fp
+set DC_DCT_PHYSICAL_CONSTRAINTS_INPUT_FILE            ${DESIGN_NAME}.physical_constraints.tcl
 
 
 ###############
 # DCT Reports #
 ###############
 
-set DCRM_DCT_PHYSICAL_CONSTRAINTS_REPORT                ${DESIGN_NAME}.physical_constraints.rpt
+set DC_DCT_PHYSICAL_CONSTRAINTS_REPORT                ${DESIGN_NAME}.physical_constraints.rpt
 
-set DCRM_DCT_FINAL_CONGESTION_REPORT                    ${DESIGN_NAME}.mapped.congestion.rpt
-set DCRM_DCT_FINAL_CONGESTION_MAP_OUTPUT_FILE           ${DESIGN_NAME}.mapped.congestion_map.png
-set DCRM_DCT_FINAL_CONGESTION_MAP_WINDOW_OUTPUT_FILE    ${DESIGN_NAME}.mapped.congestion_map_window.png
-set DCRM_ANALYZE_RTL_CONGESTION_REPORT_FILE             ${DESIGN_NAME}.analyze_rtl_congetion.rpt
+set DC_DCT_FINAL_CONGESTION_REPORT                    ${DESIGN_NAME}.mapped.congestion.rpt
+set DC_DCT_FINAL_CONGESTION_MAP_OUTPUT_FILE           ${DESIGN_NAME}.mapped.congestion_map.png
+set DC_DCT_FINAL_CONGESTION_MAP_WINDOW_OUTPUT_FILE    ${DESIGN_NAME}.mapped.congestion_map_window.png
+set DC_ANALYZE_RTL_CONGESTION_REPORT_FILE             ${DESIGN_NAME}.analyze_rtl_congetion.rpt
 
-set DCRM_DCT_FINAL_QOR_SNAPSHOT_FOLDER                  ${DESIGN_NAME}.qor_snapshot
-set DCRM_DCT_FINAL_QOR_SNAPSHOT_REPORT                  ${DESIGN_NAME}.qor_snapshot.rpt
+set DC_DCT_FINAL_QOR_SNAPSHOT_FOLDER                  ${DESIGN_NAME}.qor_snapshot
+set DC_DCT_FINAL_QOR_SNAPSHOT_REPORT                  ${DESIGN_NAME}.qor_snapshot.rpt
 
 ####################
 # DCT Output Files #
 ####################
 
-set DCRM_DCT_FLOORPLAN_OUTPUT_FILE                      ${DESIGN_NAME}.initial.fp
+set DC_DCT_FLOORPLAN_OUTPUT_FILE                      ${DESIGN_NAME}.initial.fp
 
-set DCRM_DCT_FINAL_FLOORPLAN_OUTPUT_FILE                ${DESIGN_NAME}.mapped.fp
-set DCRM_DCT_FINAL_SPEF_OUTPUT_FILE                     ${DESIGN_NAME}.mapped.spef
-set DCRM_DCT_FINAL_SDF_OUTPUT_FILE                      ${DESIGN_NAME}.mapped.sdf
+set DC_DCT_FINAL_FLOORPLAN_OUTPUT_FILE                ${DESIGN_NAME}.mapped.fp
+set DC_DCT_FINAL_SPEF_OUTPUT_FILE                     ${DESIGN_NAME}.mapped.spef
+set DC_DCT_FINAL_SDF_OUTPUT_FILE                      ${DESIGN_NAME}.mapped.sdf
 
-# Uncomment the DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE variable setting to save the
+# Uncomment the DC_DCT_SPG_PLACEMENT_OUTPUT_FILE variable setting to save the
 # standard cell placement for physical guidance flow when ASCII hand-off to IC Compiler
 # is used.
 
-# set DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE                  ${DESIGN_NAME}.mapped.std_cell.def
+# set DC_DCT_SPG_PLACEMENT_OUTPUT_FILE                  ${DESIGN_NAME}.mapped.std_cell.def
 
 #################################################################################
 # Formality Flow Files
 #################################################################################
 
-set DCRM_SVF_OUTPUT_FILE                                ${DESIGN_NAME}.mapped.svf
+set DC_SVF_OUTPUT_FILE                                ${DESIGN_NAME}.mapped.svf
 
 set FMRM_UNMATCHED_POINTS_REPORT                        ${DESIGN_NAME}.fmv_unmatched_points.rpt
 
@@ -215,42 +184,23 @@ set FMRM_FAILING_POINTS_REPORT                          ${DESIGN_NAME}.fmv_faili
 set FMRM_ABORTED_POINTS_REPORT                          ${DESIGN_NAME}.fmv_aborted_points.rpt
 set FMRM_ANALYZE_POINTS_REPORT                          ${DESIGN_NAME}.fmv_analyze_points.rpt
 
+# The following setting removes new variable info messages from the end of the log file
+set_app_var sh_new_variable_message false
 
-#################################################################################
-# Setup Variables
-#
-# Modify settings in this section to customize your Design Compiler Reference
-# Methodology run.
-# Portions of dc_setup.tcl may be used by other tools so program name checks
-# are performed where necessary.
-#################################################################################
 
-  # The following setting removes new variable info messages from the end of the log file
-  set_app_var sh_new_variable_message false
+# Use the set_host_options command to enable multicore optimization to improve runtime.
+# This feature has special usage and license requirements.  Refer to the
+# "Support for Multicore Technology" section in the Design Compiler User Guide
+# for multicore usage guidelines.
+# Note: This is a DC Ultra feature and is not supported in DC Expert.
 
-if {$synopsys_program_name == "dc_shell"}  {
+set_host_options -max_cores $MAX_CORES
 
-  #################################################################################
-  # Design Compiler Setup Variables
-  #################################################################################
+# Change alib_library_analysis_path to point to a central cache of analyzed libraries
+# to save runtime and disk space.  The following setting only reflects the
+# default value and should be changed to a central location for best results.
 
-  # Use the set_host_options command to enable multicore optimization to improve runtime.
-  # This feature has special usage and license requirements.  Refer to the
-  # "Support for Multicore Technology" section in the Design Compiler User Guide
-  # for multicore usage guidelines.
-  # Note: This is a DC Ultra feature and is not supported in DC Expert.
-
-   set_host_options -max_cores $MAX_CORES
-
-  # Change alib_library_analysis_path to point to a central cache of analyzed libraries
-  # to save runtime and disk space.  The following setting only reflects the
-  # default value and should be changed to a central location for best results.
-
-  set_app_var alib_library_analysis_path /src/SAED32nm/alib.cache
-
-  # Add any additional Design Compiler variables needed here
-
-}
+set_app_var alib_library_analysis_path {{alib_library_analysis_cache}}
 
 # The following variables are used by scripts in the rm_dc_scripts folder to direct
 # the location of the output files.
@@ -261,101 +211,89 @@ set RESULTS_DIR "results"
 file mkdir ${REPORTS_DIR}
 file mkdir ${RESULTS_DIR}
 
-#set variable OPTIMIZATION_FLOW from following RM+ flows
 #High Performance Low Power (hplp)
 #High Connectivity (hc)
 #Runtime Exploration (rtm_exp)
 
-set OPTIMIZATION_FLOW  "{{optimization_flow}}" ;# Specify one flow out of hplp | hc | rtm_exp
+set OPTIMIZATION_FLOW  {{optimization_flow}} ;# Specify one flow out of hplp | hc | rtm_exp
 
-  set_app_var search_path ". ${ADDITIONAL_SEARCH_PATH} $search_path"
+set_app_var search_path ". ${ADDITIONAL_SEARCH_PATH} $search_path"
 
-  # Milkyway variable settings
+# Make sure to define the Milkyway library variable
+# mw_design_library, it is needed by write_milkyway command
 
-  # Make sure to define the Milkyway library variable
-  # mw_design_library, it is needed by write_milkyway command
+set mw_reference_library ${MW_REFERENCE_LIB_DIRS}
+set_app_var mw_design_library ${DC_MW_LIBRARY_NAME}
 
-  set mw_reference_library ${MW_REFERENCE_LIB_DIRS}
-  set mw_design_library ${DCRM_MW_LIBRARY_NAME}
+set mw_site_name_mapping { {CORE unit} {Core unit} {core unit} }
 
-  set mw_site_name_mapping { {CORE unit} {Core unit} {core unit} }
+set_app_var target_library ${TARGET_LIBRARY_FILES}
+set_app_var synthetic_library dw_foundation.sldb
 
-# The remainder of the setup below should only be performed in Design Compiler
-if {$synopsys_program_name == "dc_shell"}  {
+if { $OPTIMIZATION_FLOW == "hplp" } {
+# Enabling the usage of DesignWare minPower Components requires additional DesignWare-LP license
+    set_app_var synthetic_library "dw_minpower.sldb  dw_foundation.sldb"
+}
 
-  set_app_var target_library ${TARGET_LIBRARY_FILES}
-  set_app_var synthetic_library dw_foundation.sldb
+set_app_var link_library "* $TARGET_LIBRARY_FILES $ADDITIONAL_LINK_LIB_FILES $synthetic_library"
 
-   if { $OPTIMIZATION_FLOW == "hplp" } {
-  # Enabling the usage of DesignWare minPower Components requires additional DesignWare-LP license
-  # set_app_var synthetic_library "dw_minpower.sldb  dw_foundation.sldb"
-   }
-
-  set_app_var link_library "* $target_library $ADDITIONAL_LINK_LIB_FILES $synthetic_library"
-
-  # Set min libraries if they exist
-  foreach {max_library min_library} $MIN_LIBRARY_FILES {
+# Set min libraries if they exist
+foreach {max_library min_library} $MIN_LIBRARY_FILES {
     set_min_library $max_library -min_version $min_library
-  }
+}
 
 
-    # To activate the extended layer mode to support 4095 layers uncomment the extend_mw_layers command
-    # before creating the Milkyway library. The extended layer mode is permanent and cannot be reverted
-    # back to the 255 layer mode once activated.
+# To activate the extended layer mode to support 4095 layers uncomment the extend_mw_layers command
+# before creating the Milkyway library. The extended layer mode is permanent and cannot be reverted
+# back to the 255 layer mode once activated.
 
-    # extend_mw_layers
+# extend_mw_layers
 
-    # Only create new Milkyway design library if it doesn't already exist
-    if {![file isdirectory $mw_design_library ]} {
-      create_mw_lib   -technology $TECH_FILE \
-                      -mw_reference_library $mw_reference_library \
-                      $mw_design_library
-    } else {
-      # If Milkyway design library already exists, ensure that it is consistent with specified Milkyway reference libraries
-      set_mw_lib_reference $mw_design_library -mw_reference_library $mw_reference_library
+# Only create new Milkyway design library if it doesn't already exist
+if {![file isdirectory $mw_design_library ]} {
+  create_mw_lib   -technology $TECH_FILE \
+                  -mw_reference_library $mw_reference_library \
+                  $mw_design_library
+} else {
+  # If Milkyway design library already exists, ensure that it is consistent with specified Milkyway reference libraries
+  set_mw_lib_reference $mw_design_library -mw_reference_library $mw_reference_library
+}
+
+open_mw_lib $mw_design_library
+
+check_library > ${REPORTS_DIR}/${DC_CHECK_LIBRARY_REPORT}
+
+if {[shell_is_in_topographical_mode]} {
+    if {[catch {set_tlu_plus_files -max_tluplus $TLUPLUS_MAX_FILE -min_tluplus $TLUPLUS_MIN_FILE -tech2itf_map $MAP_FILE} msg]} {
+        puts "ERROR: set_tlu_plus_files failed: $msg\n"
+        exit 2
     }
 
-    open_mw_lib     $mw_design_library
+    if {[catch {check_tlu_plus_files} msg]} {
+        puts "ERROR: check_tlu_plus_files failed: $msg\n"
+        exit 2
+    }
+}
 
-    check_library > ${REPORTS_DIR}/${DCRM_CHECK_LIBRARY_REPORT}
+#################################################################################
+# Library Modifications
+#
+# Apply library modifications after the libraries are loaded.
+#################################################################################
 
-    set_tlu_plus_files -max_tluplus $TLUPLUS_MAX_FILE \
-                       -min_tluplus $TLUPLUS_MIN_FILE \
-                       -tech2itf_map $MAP_FILE
-
-    check_tlu_plus_files
-
-
-  #################################################################################
-  # Library Modifications
-  #
-  # Apply library modifications after the libraries are loaded.
-  #################################################################################
-
-  if {[file exists [which ${LIBRARY_DONT_USE_FILE}]]} {
-    puts "RM-Info: Sourcing script file [which ${LIBRARY_DONT_USE_FILE}]\n"
+if {[file exists [which ${LIBRARY_DONT_USE_FILE}]]} {
+    puts "Sourcing script file [which ${LIBRARY_DONT_USE_FILE}]\n"
     source -echo -verbose ${LIBRARY_DONT_USE_FILE}
-  }
 }
 
-
-# Design Compiler must be run in topographical mode for SPG flow support
-# SPG also requires a license for Design Compiler Graphical
-if {![shell_is_in_topographical_mode]} {
-  puts "RM-Error: dc_shell must be run in topographical mode for SPG support."
-  exit 1
-}
-
-################################################################################
 # You can enable inference of multibit registers from the buses defined in the RTL.
 # The replacement of single-bit cells with multibit library cells occurs during execution
 # of the compile_ultra command. This variable has to be set before reading the RTL
 #
 # set_app_var hdlin_infer_multibit default_all
-#################################################################################
 
 if { $OPTIMIZATION_FLOW == "hplp"} {
- set_app_var hdlin_infer_multibit default_all
+    set_app_var hdlin_infer_multibit default_all
 }
 
 # Enable the support of via resistance for RC estimation to improve the timing
@@ -363,8 +301,8 @@ if { $OPTIMIZATION_FLOW == "hplp"} {
 set_app_var spg_enable_via_resistance_support true
 
 if {[file exists [which ${LIBRARY_DONT_USE_PRE_COMPILE_LIST}]]} {
-  puts "RM-Info: Sourcing script file [which ${LIBRARY_DONT_USE_PRE_COMPILE_LIST}]\n"
-  source -echo -verbose $LIBRARY_DONT_USE_PRE_COMPILE_LIST
+    puts "RM-Info: Sourcing script file [which ${LIBRARY_DONT_USE_PRE_COMPILE_LIST}]\n"
+    source -echo -verbose $LIBRARY_DONT_USE_PRE_COMPILE_LIST
 }
 
 #################################################################################
@@ -391,7 +329,7 @@ if {[file exists [which ${LIBRARY_DONT_USE_PRE_COMPILE_LIST}]]} {
 # https://solvnet.synopsys.com/retrieve/033140.html
 
 # Define the verification setup file for Formality
-set_svf ${RESULTS_DIR}/${DCRM_SVF_OUTPUT_FILE}
+set_svf ${RESULTS_DIR}/${DC_SVF_OUTPUT_FILE}
 
 #################################################################################
 # Setup SAIF Name Mapping Database
@@ -418,10 +356,10 @@ set_app_var hdlin_enable_hier_map true
 
 
 {{#verilog_sources}}
-    if {[catch {analyze -format sverilog {{path}} } msg]} {
-        puts stderr "[ERROR]: analyze of  {{path}} failed : $msg"
-        exit 2
-    }
+if {[catch {analyze -format sverilog {{path}} } msg]} {
+    puts stderr "ERROR: analyze of  {{path}} failed : $msg"
+    exit 2
+}
 {{/verilog_sources}}
 
 
@@ -431,7 +369,10 @@ list_designs
 
 current_design {{top_module_name}}
 
-link
+if {! [link] } {
+    puts "link failed!"
+    exit 2
+}
 
 set_verification_top
 
@@ -440,14 +381,14 @@ set_verification_top
 # You can read an elaborated design from the same release.
 # Using an elaborated design from an older release will not give the best results.
 
-# read_ddc ${DCRM_ELABORATED_DESIGN_DDC_OUTPUT_FILE}
-write -hierarchy -format ddc -output ${RESULTS_DIR}/${DCRM_ELABORATED_DESIGN_DDC_OUTPUT_FILE}
+# read_ddc ${DC_ELABORATED_DESIGN_DDC_OUTPUT_FILE}
+write -hierarchy -format ddc -output ${RESULTS_DIR}/${DC_ELABORATED_DESIGN_DDC_OUTPUT_FILE}
 
 #################################################################################
 # sets the multibit_mode attribute
 #################################################################################
 if { $OPTIMIZATION_FLOW == "hplp"} {
-  # Enable mapping to multibit only if the timing is not degraded.Adjust the critical Range as required by the design.
+    # Enable mapping to multibit only if the timing is not degraded.Adjust the critical Range as required by the design.
     set_multibit_options -mode timing_only -critical_range 0.1
 }
 
@@ -455,13 +396,9 @@ if { $OPTIMIZATION_FLOW == "hplp"} {
 # Reports pre-synthesis congestion analysis.
 #################################################################################
 if { $OPTIMIZATION_FLOW == "hc"} {
-  #Analyze the RTL constructs which may lead to congestion
-  analyze_rtl_congestion > ${REPORTS_DIR}/${DCRM_ANALYZE_RTL_CONGESTION_REPORT_FILE}
+    #Analyze the RTL constructs which may lead to congestion
+    analyze_rtl_congestion > ${REPORTS_DIR}/${DC_ANALYZE_RTL_CONGESTION_REPORT_FILE}
 }
-
-#################################################################################
-# Apply Logical Design Constraints
-#################################################################################
 
 #=========================================================================
 # Design Constraints File
@@ -502,27 +439,25 @@ set_input_delay -clock ${CLOCK_NAME} 0 [all_inputs]
 
 set_output_delay -clock ${CLOCK_NAME} 0 [all_outputs]
 
-#Make all signals limit their fanout
-
-set_max_fanout 20 ${DESIGN_NAME}
+set_max_fanout {{max_fanout}} ${DESIGN_NAME}
 
 # Make all signals meet good slew
 
-set_max_transition [expr 0.25*${CLOCK_PERIOD}] ${DESIGN_NAME}
+#set_max_transition [expr 0.25*${CLOCK_PERIOD}] ${DESIGN_NAME}
 
 #set_input_transition 1 [all_inputs]
 #set_max_transition 10 [all_outputs]
 
 
-# You can use either SDC file ${DCRM_SDC_INPUT_FILE} or Tcl file
-# ${DCRM_CONSTRAINTS_INPUT_FILE} to constrain your design.
-if {[file exists [which ${DCRM_SDC_INPUT_FILE}]]} {
-  puts "RM-Info: Reading SDC file [which ${DCRM_SDC_INPUT_FILE}]\n"
-  read_sdc ${DCRM_SDC_INPUT_FILE}
+# You can use either SDC file ${DC_SDC_INPUT_FILE} or Tcl file
+# ${DC_CONSTRAINTS_INPUT_FILE} to constrain your design.
+if {[file exists [which ${DC_SDC_INPUT_FILE}]]} {
+  puts "RM-Info: Reading SDC file [which ${DC_SDC_INPUT_FILE}]\n"
+  read_sdc ${DC_SDC_INPUT_FILE}
 }
-if {[file exists [which ${DCRM_CONSTRAINTS_INPUT_FILE}]]} {
-  puts "RM-Info: Sourcing script file [which ${DCRM_CONSTRAINTS_INPUT_FILE}]\n"
-  source -echo -verbose ${DCRM_CONSTRAINTS_INPUT_FILE}
+if {[file exists [which ${DC_CONSTRAINTS_INPUT_FILE}]]} {
+  puts "RM-Info: Sourcing script file [which ${DC_CONSTRAINTS_INPUT_FILE}]\n"
+  source -echo -verbose ${DC_CONSTRAINTS_INPUT_FILE}
 }
 
 # You can enable analysis and optimization for multiple clocks per register.
@@ -534,12 +469,6 @@ if {[file exists [which ${DCRM_CONSTRAINTS_INPUT_FILE}]]} {
 #                  -group {CLKA, CLKB} -group {CLKC, CLKD}
 #
 # set_app_var timing_enable_multiple_clocks_per_reg true
-
-#################################################################################
-# Apply The Operating Conditions
-#################################################################################
-
-# Set operating condition on top level
 
 # set_operating_conditions -max <max_opcond> -min <min_opcond>
 
@@ -559,143 +488,144 @@ group_path -name FEEDTHROUGH -from [remove_from_collection [all_inputs] ${ports_
 # Power Optimization Section
 #################################################################################
 
-    #############################################################################
-    # Clock Gating Setup
-    #############################################################################
+#############################################################################
+# Clock Gating Setup
+#############################################################################
 
-    # If your design has instantiated clock gates, you should use identify_clock_gating
-    # command to identify and the report_clock_gating -multi_stage to report them.
+# If your design has instantiated clock gates, you should use identify_clock_gating
+# command to identify and the report_clock_gating -multi_stage to report them.
 
-    # identify_clock_gating
-    # report_clock_gating -multi_stage -nosplit > ${REPORTS_DIR}/${DCRM_INSTANTIATE_CLOCK_GATES_REPORT}
+# identify_clock_gating
+# report_clock_gating -multi_stage -nosplit > ${REPORTS_DIR}/${DC_INSTANTIATE_CLOCK_GATES_REPORT}
 
-    # If you do not want clock-gating to optimize your user instantiated
-    # clock-gating cells, you should set the pwr_preserve_cg attribute upon
-    # those clock-gating cells.
+# If you do not want clock-gating to optimize your user instantiated
+# clock-gating cells, you should set the pwr_preserve_cg attribute upon
+# those clock-gating cells.
 
-    # set_preserve_clock_gate [get_cell <user_clock_gating_cells>]
+# set_preserve_clock_gate [get_cell <user_clock_gating_cells>]
 
-    # Default clock_gating_style suits most designs.  Change only if necessary.
-    # set_clock_gating_style -positive_edge_logic {integrated} -negative_edge_logic {integrated} -control_point before ...
+# Default clock_gating_style suits most designs.  Change only if necessary.
+# set_clock_gating_style -positive_edge_logic {integrated} -negative_edge_logic {integrated} -control_point before ...
 
-    # Clock gate insertion is now performed during compile_ultra -gate_clock
-    # so insert_clock_gating is no longer recommended at this step.
+# Clock gate insertion is now performed during compile_ultra -gate_clock
+# so insert_clock_gating is no longer recommended at this step.
 
-    # The following setting can be used to enable global clock gating.
-    # With global clock gating, common enables are extracted across hierarchies
-    # which results in fewer redundant clock gates.
+# The following setting can be used to enable global clock gating.
+# With global clock gating, common enables are extracted across hierarchies
+# which results in fewer redundant clock gates.
 
-    # set compile_clock_gating_through_hierarchy true
+# set compile_clock_gating_through_hierarchy true
 
-    # For better timing optimization of enable logic, clock latency for
-    # clock gating cells can be optionally specified.
+# For better timing optimization of enable logic, clock latency for
+# clock gating cells can be optionally specified.
 
-    # set_clock_gate_latency -clock <clock_name> -stage <stage_num> \
-    #         -fanout_latency {fanout_range1 latency_val1 fanout_range2 latency_val2 ...}
+# set_clock_gate_latency -clock <clock_name> -stage <stage_num> \
+#         -fanout_latency {fanout_range1 latency_val1 fanout_range2 latency_val2 ...}
 
-    # You can use "set_self_gating_options" command to specify self-gating
-    # options when -self_gating option is used in addition to -gate_clock
-    # option at the compile_ultra command. To inserts self-gate on clock-gated
-    # registers, uncomment the following line:
-    # set_self_gating_options -interaction_with_clock_gating insert
+# You can use "set_self_gating_options" command to specify self-gating
+# options when -self_gating option is used in addition to -gate_clock
+# option at the compile_ultra command. To inserts self-gate on clock-gated
+# registers, uncomment the following line:
+# set_self_gating_options -interaction_with_clock_gating insert
 
-    # To improve enable timing in high performance designs, physically aware clock gating
-    # is available in Design Compiler topographical for Synopsys Physical Guidance (SPG)
-    # flow. This flow works best with a corresponding IC Compiler  SPG flow. To enable
-    # physically aware clock gating in Design Compiler Graphical, uncomment the
-    # following setting:
+# To improve enable timing in high performance designs, physically aware clock gating
+# is available in Design Compiler topographical for Synopsys Physical Guidance (SPG)
+# flow. This flow works best with a corresponding IC Compiler  SPG flow. To enable
+# physically aware clock gating in Design Compiler Graphical, uncomment the
+# following setting:
 
-    # set_app_var power_cg_physically_aware_cg true
+# set_app_var power_cg_physically_aware_cg true
 
-    #############################################################################
-    # Apply Power Optimization Constraints
-    #############################################################################
+#############################################################################
+# Apply Power Optimization Constraints
+#############################################################################
 
-    # Include a SAIF file, if possible, for power optimization.  If a SAIF file
-    # is not provided, the default toggle rate of 0.1 will be used for propagating
-    # switching activity.
+# Include a SAIF file, if possible, for power optimization.  If a SAIF file
+# is not provided, the default toggle rate of 0.1 will be used for propagating
+# switching activity.
 
-    # read_saif -auto_map_names -input ${DESIGN_NAME}.saif -instance < DESIGN_INSTANCE > -verbose
-    # If a SAIF file is not available and a PrimePower mapping file is still
-    # needed for the design, you can manually update the saif_map database.
-    ## Create a collection of registers in the design
-    # set track_reg [get_object_name [all_registers]]
-    ## Add registers to be tracked to the SAIF_MAP data base
-    # foreach map_reg $track_regs {
-    # set RTL_NAME [regsub {_reg} $map_reg {}]
-    # saif_map -add_name $RTL_NAME $map_reg
-    #}
-    #unset track_reg
+# read_saif -auto_map_names -input ${DESIGN_NAME}.saif -instance < DESIGN_INSTANCE > -verbose
+# If a SAIF file is not available and a PrimePower mapping file is still
+# needed for the design, you can manually update the saif_map database.
+## Create a collection of registers in the design
+# set track_reg [get_object_name [all_registers]]
+## Add registers to be tracked to the SAIF_MAP data base
+# foreach map_reg $track_regs {
+# set RTL_NAME [regsub {_reg} $map_reg {}]
+# saif_map -add_name $RTL_NAME $map_reg
+#}
+#unset track_reg
 
-      # For multi-Vth design, replace the following to set the threshold voltage groups in the libraries.
+# For multi-Vth design, replace the following to set the threshold voltage groups in the libraries.
 
-      # set_attribute <my_hvt_lib> default_threshold_voltage_group HVT -type string
-      # set_attribute <my_lvt_lib> default_threshold_voltage_group LVT -type string
+# set_attribute <my_hvt_lib> default_threshold_voltage_group HVT -type string
+# set_attribute <my_lvt_lib> default_threshold_voltage_group LVT -type string
 
-    # Starting in J-2014.09, leakage optimization is the default flow and is always enabled.
+# Starting in J-2014.09, leakage optimization is the default flow and is always enabled.
 
-      # Use the following command to enable power prediction using clock tree estimation.
+# Use the following command to enable power prediction using clock tree estimation.
 
-      # set_power_prediction true -ct_references <LIB CELL LIST>
+# set_power_prediction true -ct_references <LIB CELL LIST>
 
-    set power_keep_license_after_power_commands true
-    foreach_in_collection reg [filter_collection [remove_from_collection [all_registers] [all_macro_cells]] "ff_edge_sense!=0"] {
-       saif_map -set_name [get_object_name $reg] -type saif_name [get_cells $reg]
-    }
-    set power_keep_license_after_power_commands false
+set power_keep_license_after_power_commands true
+foreach_in_collection reg [filter_collection [remove_from_collection [all_registers] [all_macro_cells]] "ff_edge_sense!=0"] {
+   saif_map -set_name [get_object_name $reg] -type saif_name [get_cells $reg]
+}
+set power_keep_license_after_power_commands false
 
 
-  ##################################################################################
-  # Apply Physical Design Constraints
-  #
-  # Optional: Floorplan information can be read in here if available.
-  # This is highly recommended for irregular floorplans.
-  #
-  # Floorplan constraints can be provided from one of the following sources:
-  # * extract_physical_constraints with a DEF file
-  #	* read_floorplan with a floorplan file (written by write_floorplan)
-  #	* User generated Tcl physical constraints
-  #
-  ##################################################################################
+##################################################################################
+# Apply Physical Design Constraints
+#
+# Optional: Floorplan information can be read in here if available.
+# This is highly recommended for irregular floorplans.
+#
+# Floorplan constraints can be provided from one of the following sources:
+# * extract_physical_constraints with a DEF file
+#	* read_floorplan with a floorplan file (written by write_floorplan)
+#	* User generated Tcl physical constraints
+#
+##################################################################################
 
-  # Specify ignored layers for routing to improve correlation
-  # Use the same ignored layers that will be used during place and route
+# Specify ignored layers for routing to improve correlation
+# Use the same ignored layers that will be used during place and route
 
-  if { ${MIN_ROUTING_LAYER} != ""} {
+if { ${MIN_ROUTING_LAYER} != ""} {
     set_ignored_layers -min_routing_layer ${MIN_ROUTING_LAYER}
-  }
-  if { ${MAX_ROUTING_LAYER} != ""} {
+}
+if { ${MAX_ROUTING_LAYER} != ""} {
     set_ignored_layers -max_routing_layer ${MAX_ROUTING_LAYER}
-  }
+}
+if {[shell_is_in_topographical_mode]} {
+    report_ignored_layers
+}
 
-  report_ignored_layers
+# If the macro names change after mapping and writing out the design due to
+# ungrouping or Verilog change_names renaming, it may be necessary to translate
+# the names to correspond to the cell names that exist before compile.
 
-  # If the macro names change after mapping and writing out the design due to
-  # ungrouping or Verilog change_names renaming, it may be necessary to translate
-  # the names to correspond to the cell names that exist before compile.
+# During DEF constraint extraction, extract_physical_constraints automatically
+# matches DEF names back to precompile names in memory using standard matching rules.
+# read_floorplan will also automatically perform this name matching.
 
-  # During DEF constraint extraction, extract_physical_constraints automatically
-  # matches DEF names back to precompile names in memory using standard matching rules.
-  # read_floorplan will also automatically perform this name matching.
+# Modify set_query_rules if other characters are used for hierarchy separators
+# or bus names.
 
-  # Modify set_query_rules if other characters are used for hierarchy separators
-  # or bus names.
+# set_query_rules  -hierarchical_separators {/ _ .} \
+#                  -bus_name_notations {[] __ ()}   \
+#                  -class {cell pin port net}       \
+#                  -wildcard                        \
+#                  -regsub_cumulative               \
+#                  -show
 
-  # set_query_rules  -hierarchical_separators {/ _ .} \
-  #                  -bus_name_notations {[] __ ()}   \
-  #                  -class {cell pin port net}       \
-  #                  -wildcard                        \
-  #                  -regsub_cumulative               \
-  #                  -show
+## For DEF floorplan input
 
-  ## For DEF floorplan input
+# The DEF file for Design Compiler Topographical can be written from IC Compiler using the following
+# recommended options:
+# icc_shell> write_def -version 5.7 -rows_tracks_gcells -fixed -pins -blockages -specialnets \
+#                      -vias -regions_groups -verbose -output ${DC_DCT_DEF_INPUT_FILE}
 
-  # The DEF file for Design Compiler Topographical can be written from IC Compiler using the following
-  # recommended options:
-  # icc_shell> write_def -version 5.7 -rows_tracks_gcells -fixed -pins -blockages -specialnets \
-  #                      -vias -regions_groups -verbose -output ${DCRM_DCT_DEF_INPUT_FILE}
-
-  if {[file exists [which ${DCRM_DCT_DEF_INPUT_FILE}]]} {
+if {[file exists [which ${DC_DCT_DEF_INPUT_FILE}]]} {
     # If you have physical only cells as a part of your floorplan DEF file, you can use
     # the -allow_physical_cells option with extract_physical_constraints to include
     # the physical only cells as a part of the floorplan in Design Compiler to improve correlation.
@@ -705,72 +635,71 @@ group_path -name FEEDTHROUGH -from [remove_from_collection [all_inputs] ${ports_
     #       See the extract_physical_constraints manpage for more information about
     #       identifying the cells added to the design when using -allow_physical_cells.
 
-    # extract_physical_constraints -allow_physical_cells ${DCRM_DCT_DEF_INPUT_FILE}
+    # extract_physical_constraints -allow_physical_cells ${DC_DCT_DEF_INPUT_FILE}
 
-    puts "RM-Info: Reading in DEF file [which ${DCRM_DCT_DEF_INPUT_FILE}]\n"
+    puts "RM-Info: Reading in DEF file [which ${DC_DCT_DEF_INPUT_FILE}]\n"
     if { $OPTIMIZATION_FLOW == "hplp"} {
-	extract_physical_constraints -allow_physical_cells ${DCRM_DCT_DEF_INPUT_FILE}
+        extract_physical_constraints -allow_physical_cells ${DC_DCT_DEF_INPUT_FILE}
     } else {
-	extract_physical_constraints ${DCRM_DCT_DEF_INPUT_FILE}
+        extract_physical_constraints ${DC_DCT_DEF_INPUT_FILE}
     }
-  }
+}
 
-  # OR
+# OR
 
-  ## For floorplan file input
+## For floorplan file input
 
-  # The floorplan file for Design Compiler Topographical can be written from IC Compiler using the following
-  # recommended options:
-  # Note: IC Compiler requires the use of -placement {terminal} with -create_terminal beginning in the
-  #       D-2010.03-SP1 release.
-  # icc_shell> write_floorplan -placement {io terminal hard_macro soft_macro} -create_terminal \
-  #                            -row -create_bound -preroute -track ${DCRM_DCT_FLOORPLAN_INPUT_FILE}
+# The floorplan file for Design Compiler Topographical can be written from IC Compiler using the following
+# recommended options:
+# Note: IC Compiler requires the use of -placement {terminal} with -create_terminal beginning in the
+#       D-2010.03-SP1 release.
+# icc_shell> write_floorplan -placement {io terminal hard_macro soft_macro} -create_terminal \
+#                            -row -create_bound -preroute -track ${DC_DCT_FLOORPLAN_INPUT_FILE}
 
-  # Read in the secondary floorplan file, previously written by write_floorplan in Design Compiler,
-  # to restore physical-only objects back to the design, before reading the main floorplan file.
+# Read in the secondary floorplan file, previously written by write_floorplan in Design Compiler,
+# to restore physical-only objects back to the design, before reading the main floorplan file.
 
-  if {[file exists [which ${DCRM_DCT_FLOORPLAN_INPUT_FILE}.objects]]} {
-    puts "RM-Info: Reading in secondary floorplan file [which ${DCRM_DCT_FLOORPLAN_INPUT_FILE}.objects]\n"
-    read_floorplan ${DCRM_DCT_FLOORPLAN_INPUT_FILE}.objects
-  }
+if {[file exists [which ${DC_DCT_FLOORPLAN_INPUT_FILE}.objects]]} {
+    puts "RM-Info: Reading in secondary floorplan file [which ${DC_DCT_FLOORPLAN_INPUT_FILE}.objects]\n"
+    read_floorplan ${DC_DCT_FLOORPLAN_INPUT_FILE}.objects
+}
 
-  if {[file exists [which ${DCRM_DCT_FLOORPLAN_INPUT_FILE}]]} {
-    puts "RM-Info: Reading in floorplan file [which ${DCRM_DCT_FLOORPLAN_INPUT_FILE}]\n"
-    read_floorplan ${DCRM_DCT_FLOORPLAN_INPUT_FILE}
-  }
+if {[file exists [which ${DC_DCT_FLOORPLAN_INPUT_FILE}]]} {
+    puts "RM-Info: Reading in floorplan file [which ${DC_DCT_FLOORPLAN_INPUT_FILE}]\n"
+    read_floorplan ${DC_DCT_FLOORPLAN_INPUT_FILE}
+}
 
-  # OR
+# OR
 
-  ## For Tcl file input
+## For Tcl file input
 
-  # For Tcl constraints, the name matching feature must be explicitly enabled
-  # and will also use the set_query_rules setttings. This should be turned off
-  # after the constraint read in order to minimize runtime.
+# For Tcl constraints, the name matching feature must be explicitly enabled
+# and will also use the set_query_rules setttings. This should be turned off
+# after the constraint read in order to minimize runtime.
 
-  if {[file exists [which ${DCRM_DCT_PHYSICAL_CONSTRAINTS_INPUT_FILE}]]} {
+if {[file exists [which ${DC_DCT_PHYSICAL_CONSTRAINTS_INPUT_FILE}]]} {
     set_app_var enable_rule_based_query true
-    puts "RM-Info: Sourcing script file [which ${DCRM_DCT_PHYSICAL_CONSTRAINTS_INPUT_FILE}]\n"
-    source -echo -verbose ${DCRM_DCT_PHYSICAL_CONSTRAINTS_INPUT_FILE}
+    puts "RM-Info: Sourcing script file [which ${DC_DCT_PHYSICAL_CONSTRAINTS_INPUT_FILE}]\n"
+    source -echo -verbose ${DC_DCT_PHYSICAL_CONSTRAINTS_INPUT_FILE}
     set_app_var enable_rule_based_query false
-  }
+}
 
 
-  # Use write_floorplan to save the applied floorplan.
+if {[shell_is_in_topographical_mode]} {
+    # Use write_floorplan to save the applied floorplan.
 
-  # Note: A secondary floorplan file ${DCRM_DCT_FLOORPLAN_OUTPUT_FILE}.objects
-  #       might also be written to capture physical-only objects in the design.
-  #       This file should be read in before reading the main floorplan file.
+    # Note: A secondary floorplan file ${DC_DCT_FLOORPLAN_OUTPUT_FILE}.objects
+    #       might also be written to capture physical-only objects in the design.
+    #       This file should be read in before reading the main floorplan file.
 
-  write_floorplan -all ${RESULTS_DIR}/${DCRM_DCT_FLOORPLAN_OUTPUT_FILE}
+    write_floorplan -all ${RESULTS_DIR}/${DC_DCT_FLOORPLAN_OUTPUT_FILE}
 
-  # Verify that all the desired physical constraints have been applied
-  # Add the -pre_route option to include pre-routes in the report
-  report_physical_constraints > ${REPORTS_DIR}/${DCRM_DCT_PHYSICAL_CONSTRAINTS_REPORT}
+    # Verify that all the desired physical constraints have been applied
+    # Add the -pre_route option to include pre-routes in the report
 
+    report_physical_constraints > ${REPORTS_DIR}/${DC_DCT_PHYSICAL_CONSTRAINTS_REPORT}
+}
 
-#################################################################################
-# Apply Additional Optimization Constraints
-#################################################################################
 
 # Prevent assignment statements in the Verilog netlist.
 set_fix_multiple_port_nets -all -buffer_constants
@@ -792,7 +721,7 @@ set_fix_multiple_port_nets -all -buffer_constants
 
 # Uncomment the following to snapshot the environment for the Consistency Checker
 
-# write_environment -consistency -output ${REPORTS_DIR}/${DCRM_CONSISTENCY_CHECK_ENV_FILE}
+# write_environment -consistency -output ${REPORTS_DIR}/${DC_CONSISTENCY_CHECK_ENV_FILE}
 
 #################################################################################
 # Check for Design Problems
@@ -800,31 +729,25 @@ set_fix_multiple_port_nets -all -buffer_constants
 
 # Check the current design for consistency
 check_design -summary
-check_design > ${REPORTS_DIR}/${DCRM_CHECK_DESIGN_REPORT}
+check_design > ${REPORTS_DIR}/${DC_CHECK_DESIGN_REPORT}
 
 # The analyze_datapath_extraction command can help you to analyze why certain data
 # paths are no extracted, uncomment the following line to report analyisis.
 
-# analyze_datapath_extraction > ${REPORTS_DIR}/${DCRM_ANALYZE_DATAPATH_EXTRACTION_REPORT}
+# analyze_datapath_extraction > ${REPORTS_DIR}/${DC_ANALYZE_DATAPATH_EXTRACTION_REPORT}
 
-
-#################################################################################
-# Multibit Register Reports pre-compile_ultra
-#################################################################################
 
 #################################################################################
 # Uncomment the next line to verify that the desired bussed registers are grouped as multibit components
 # These multibit components are mapped to multibit registers during compile_ultra
 #
-# redirect ${REPORTS_DIR}/${DCRM_MULTIBIT_COMPONENTS_REPORT} {report_multibit -hierarchical }
+# redirect ${REPORTS_DIR}/${DC_MULTIBIT_COMPONENTS_REPORT} {report_multibit -hierarchical }
 #################################################################################
-if { $OPTIMIZATION_FLOW == "hplp"} {
-    redirect ${REPORTS_DIR}/${DCRM_MULTIBIT_COMPONENTS_REPORT} {report_multibit -hierarchical }
-}
+#if { $OPTIMIZATION_FLOW == "hplp"} {
+#    redirect ${REPORTS_DIR}/${DC_MULTIBIT_COMPONENTS_REPORT} {report_multibit -hierarchical }
+#}
 
-#################################################################################
-# Compile the Design
-#
+
 # Recommended Options:
 #
 #     -scanm
@@ -875,12 +798,8 @@ if { $OPTIMIZATION_FLOW == "hplp"} {
 #       To disable the the automatic layer optimization you can use the
 #       -no_auto_layer_optimization option.
 #
-#################################################################################
-## RM+ Variable and Command Settings before first compile_ultra
-#################################################################################
+
 if { $OPTIMIZATION_FLOW == "hplp"} {
-
-
 	# The following variable, when set to true, runs additional optimizations to improve the timing of
 	# the design at the cost of additional run time.
 	set_app_var compile_timing_high_effort true
@@ -889,9 +808,8 @@ if { $OPTIMIZATION_FLOW == "hplp"} {
 	# evenly  across the surface but are allowed to clump together for better QoR
 	set_app_var placer_max_cell_density_threshold 0.75
 
-  #Set the maximum utilization to 0.9 in congestion options
-   set_congestion_options -max_util 0.90
-
+    #Set the maximum utilization to 0.9 in congestion options
+    set_congestion_options -max_util 0.90
 
 	# The following variable, when set to true, enables very high effort optimization to fix total negative slack
 	# Setting following variable to true may affect run time
@@ -906,15 +824,19 @@ if { $OPTIMIZATION_FLOW == "hplp"} {
 	# Enable low power placement.
 	# Low power placement affects the placement of cells, pulls them closer together,
 	# on nets with high switching activity to reduce the overall dynamic power of your design.
-        set_app_var power_low_power_placement true
+    set_app_var power_low_power_placement true
 
-        # In MCMM flow use set_scenario_options -dynamic_power true
+    # In MCMM flow use set_scenario_options -dynamic_power true
 	set_dynamic_optimization true
 
 
-        # The following variable enables register replication across the hierarchy by creating new ports
+    # The following variable enables register replication across the hierarchy by creating new ports
 	# on the instances of the subdesigns if it is necessary to improve the timing of the design
 	set_app_var compile_register_replication_across_hierarchy true
+
+	# The following variable, when set to true, runs additional optimizations to improve the timing of
+    # the design at the cost of additional run time.
+    set_app_var compile_timing_high_effort true
 }
 if { $OPTIMIZATION_FLOW == "hc"} {
     # This command enables congestion aware Global buffering based on Zroutebased estimation,
@@ -936,145 +858,118 @@ if { $OPTIMIZATION_FLOW == "hc"} {
 
 }
 if { $OPTIMIZATION_FLOW == "rtm_exp"} {
-
-set_host_options -max_cores $MAX_CORES
-# The following command overrides runtime-intensive user settings with settings designed
-# to improve runtime. Since the run time intensive optimizations are turned off it might
-# impact QoR. You can use this as an exploration flow when run time is a concern.
-compile_prefer_runtime
+    # The following command overrides runtime-intensive user settings with settings designed
+    # to improve runtime. Since the run time intensive optimizations are turned off it might
+    # impact QoR. You can use this as an exploration flow when run time is a concern.
+    compile_prefer_runtime
 }
+set_dont_touch { {{#dont_touch_list}}{{.}}{{/dont_touch_list}} }
 
-# The following variable, when set to true, runs additional optimizations to improve the timing of
-# the design at the cost of additional run time.
-#set_app_var compile_timing_high_effort true
-
-# Use the "-check_only" option of "compile_ultra" to verify that your
-# libraries and design are complete and that optimization will not fail
-# in topographical mode.  Use the same options as will be used in compile_ultra.
-
-# FIXME add spg, retime, grouping back
-#compile_ultra -spg -retime -no_autoungroup
-
-if { $OPTIMIZATION_FLOW == "rtm_exp"} {
-    if {[catch compile -auto_ungroup delay} msg]} {
-        puts stderr "[ERROR]: compile failed : $msg"
-        exit 2
+# -no_autoungroup
+if {[shell_is_in_topographical_mode]} {
+    if { $OPTIMIZATION_FLOW == "rtm_exp"} {
+        if {[catch {compile_ultra -retime} msg]} {
+            puts stderr "ERROR: compile failed : $msg"
+            exit 2
+        }
+    } else {
+        if {[catch {compile_ultra -gate_clock -spg -retime} msg]} {
+            puts stderr "ERROR: compile_ultra failed : $msg"
+            exit 2
+        }
     }
 } else {
-    if {[catch compile_ultra -gate_clock -spg -retime} msg]} {
-        puts stderr "[ERROR]: compile failed : $msg"
+    if {[catch {compile -map_effort high -boundary_optimization -auto_ungroup delay} msg]} {
+        puts stderr "ERROR: compile failed : $msg"
         exit 2
     }
 }
 
-set_driving_cell -lib_cell NBUFFX16 -pin Z [get_ports ${CLOCK_NET}]
-
+set_driving_cell -lib_cell ${ADK_CLOCK_DRIVING_CELL} -pin Z [get_ports ${CLOCK_NET}]
 set_driving_cell -no_design_rule -lib_cell ${ADK_DRIVING_CELL} -pin Q [all_inputs]
 
-
 if {$OPTIMIZATION_FLOW != "rtm_exp"} {
-#################################################################################
-# Performing placement aware multibit banking
-#################################################################################
+   # You can use placement aware multibit banking to group single-bit register cells that are
+   # physically near each other into a multibit registers.
+   # This has to be done before DFT insertion in Design Compiler
+   # These commands require a Design Compiler Graphical license
+   # Please use -wns_threshold option with identify_register_banks command if u want to
+   # exclude specific percentage of timing critical registers from multibit banking
+   # identify_register_banks -output ${RESULTS_DIR}/${DC_MULTIBIT_CREATE_REGISTER_BANK_FILE}
+   # redirect ${REPORTS_DIR}/${DC_MULTIBIT_CREATE_REGISTER_BANK_REPORT} {source -echo -verbose ${RESULTS_DIR}/${DC_MULTIBIT_CREATE_REGISTER_BANK_FILE}}
 
-#################################################################################
-       # You can use placement aware multibit banking to group single-bit register cells that are
-       # physically near each other into a multibit registers.
-       # This has to be done before DFT insertion in Design Compiler
-       # These commands require a Design Compiler Graphical license
-       # Please use -wns_threshold option with identify_register_banks command if u want to
-       # exclude specific percentage of timing critical registers from multibit banking
-       # identify_register_banks -output ${RESULTS_DIR}/${DCRM_MULTIBIT_CREATE_REGISTER_BANK_FILE}
-       # redirect ${REPORTS_DIR}/${DCRM_MULTIBIT_CREATE_REGISTER_BANK_REPORT} {source -echo -verbose ${RESULTS_DIR}/${DCRM_MULTIBIT_CREATE_REGISTER_BANK_FILE}}
-#################################################################################
+    if { $OPTIMIZATION_FLOW == "hplp" } {
+    # You can use placement aware multibit banking to group single-bit register cells that
+    # are physically near each other into a multibit registers
+        # Please use -wns_threshold option with identify_register_banks command if u want to
+        # exclude specific percentage of timing critical registers from multibit banking
+        identify_register_banks -output \
+            ${RESULTS_DIR}/${DC_MULTIBIT_CREATE_REGISTER_BANK_FILE}
+        source -echo -verbose ${RESULTS_DIR}/${DC_MULTIBIT_CREATE_REGISTER_BANK_FILE}
+    }
+
+    if { $OPTIMIZATION_FLOW == "hplp" } {
+        # Creating path groups to reduce TNS
+        create_auto_path_groups -mode mapped
+    }
+    if { (${OPTIMIZATION_FLOW} == "hc") || (${OPTIMIZATION_FLOW} == "hplp") } {
+
+        # Enable congestion-driven  placement  in incremental compile to improve congestion
+        # while preserving quality of results
+        set_app_var spg_congestion_placement_in_incremental_compile true
+    }
+
+    if {[file exists [which ${LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST}]]} {
+      puts "RM-Info: Sourcing script file [which ${LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST}]\n"
+      source -echo -verbose $LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST
+    }
+
+    #########################################################################
+    # Incremental compile is required if netlist and/or constraints are
+    # changed after first compile
+    # Example: DFT insertion, Placement aware multibit banking etc.
+    # Incremental compile is also recommended for final QoR signoff as well
+    #########################################################################
 
 
-################################################################################
-## RM+ Variable and Command Settings before incremental compile
-################################################################################
-if { $OPTIMIZATION_FLOW == "hplp" } {
-# You can use placement aware multibit banking to group single-bit register cells that
-# are physically near each other into a multibit registers
-    # Please use -wns_threshold option with identify_register_banks command if u want to
-    # exclude specific percentage of timing critical registers from multibit banking
-identify_register_banks -output \
-    ${RESULTS_DIR}/${DCRM_MULTIBIT_CREATE_REGISTER_BANK_FILE}
-source -echo -verbose ${RESULTS_DIR}/${DCRM_MULTIBIT_CREATE_REGISTER_BANK_FILE}
+    if {[catch {compile_ultra -incremental} msg]} {
+        puts stderr "ERROR: compile_ultra (incremental) failed : $msg"
+        exit 2
+    }
+
+    ################################################################################
+    # Remove the path groups generated by create_path_groups command.
+    # This does not remove user created path groups
+    ################################################################################
+    if { $OPTIMIZATION_FLOW == "hplp" } {
+        remove_auto_path_groups
+    }
+    #################################################################################
+    # High-effort area optimization
+    #
+    # optimize_netlist -area command, was introduced in I-2013.12 release to improve
+    # area of gate-level netlists. The command performs monotonic gate-to-gate
+    # optimization on mapped designs, thus improving area without degrading timing or
+    # leakage.
+    #################################################################################
+
+    optimize_netlist -area
 }
 
-
-
-
-################################################################################
-## RM+ Variable and Command Settings before incremental compile
-################################################################################
-if { $OPTIMIZATION_FLOW == "hplp" } {
-  # Creating path groups to reduce TNS
- create_auto_path_groups -mode mapped
-}
-if { (${OPTIMIZATION_FLOW} == "hc") || (${OPTIMIZATION_FLOW} == "hplp") } {
-
-    # Enable congestion-driven  placement  in incremental compile to improve congestion
-    # while preserving quality of results
-    set_app_var spg_congestion_placement_in_incremental_compile true
-}
-
-if {[file exists [which ${LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST}]]} {
-  puts "RM-Info: Sourcing script file [which ${LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST}]\n"
-  source -echo -verbose $LIBRARY_DONT_USE_PRE_INCR_COMPILE_LIST
-}
-
-#########################################################################
-# Incremental compile is required if netlist and/or constraints are
-# changed after first compile
-# Example: DFT insertion, Placement aware multibit banking etc.
-# Incremental compile is also recommended for final QoR signoff as well
-#########################################################################
-
-
-if {[catch compile_ultra  -incremental -spg -retime -gate_clock -spg -retime} msg]} {
-    puts stderr "[ERROR]: compile_ultra (incremental) failed : $msg"
-    exit 2
-}
-
-################################################################################
-# Remove the path groups generated by create_path_groups command.
-# This does not remove user created path groups
-################################################################################
-if { $OPTIMIZATION_FLOW == "hplp" } {
-    remove_auto_path_groups
-}
-#################################################################################
-# High-effort area optimization
-#
-# optimize_netlist -area command, was introduced in I-2013.12 release to improve
-# area of gate-level netlists. The command performs monotonic gate-to-gate
-# optimization on mapped designs, thus improving area without degrading timing or
-# leakage.
-#################################################################################
-
-optimize_netlist -area
-}
 
 #################################################################################
 # Generate Final Reports
 #################################################################################
 
-# set_host_options -max_cores $MAX_CORES
 update_timing
 
+redirect -tee ${REPORTS_DIR}/${DC_FINAL_UNITS} {report_units}
 
-# Report units
-redirect -tee ${REPORTS_DIR}/${DCRM_FINAL_UNITS} {report_units}
-
-# Report QOR
 report_qor > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.qor.rpt
 
-report_timing -transition_time -nets -attributes -nosplit > ${REPORTS_DIR}/${DCRM_FINAL_TIMING_REPORT}
+report_timing -transition_time -nets -attributes -nosplit > ${REPORTS_DIR}/${DC_FINAL_TIMING_REPORT}
 
-report_clock_timing \
-  -type summary     \
-  > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.timing.clock.rpt
+report_clock_timing  -type summary > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.timing.clock.rpt
 
 report_timing \
   -input_pins -capacitance -transition_time \
@@ -1090,74 +985,44 @@ report_timing \
   -nworst 10 -max_paths 30 -delay_type min  \
   > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.timing.hold.rpt
 
+report_constraint -nosplit -verbose > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.constraints.rpt
 
-# Report constraints
+report_constraint  -nosplit  -verbose -all_violators > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.constraints.violators.rpt
+report_timing_requirements  > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.timing.requirements.rpt
 
-report_constraint \
-  -nosplit        \
-  -verbose        \
-  > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.constraints.rpt
-
-report_constraint \
-  -nosplit        \
-  -verbose        \
-  -all_violators  \
-  > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.constraints.violators.rpt
-
-report_timing_requirements \
-  > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.timing.requirements.rpt
-
-# Report area
-
-report_area  \
-  -hierarchy \
-  -physical  \
-  -nosplit   \
-  > ${REPORTS_DIR}/${DCRM_FINAL_AREA_REPORT}
-
-
-report_area -designware  > ${REPORTS_DIR}/${DCRM_FINAL_DESIGNWARE_AREA_REPORT}
-
-report_reference \
-  -nosplit       \
-  -hierarchy     \
-  > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.reference.rpt
-
-report_resources  -nosplit -hierarchy > ${REPORTS_DIR}/${DCRM_FINAL_RESOURCES_REPORT}
+report_area -hierarchy -physical  -nosplit > ${REPORTS_DIR}/${DC_FINAL_AREA_REPORT}
+#report_area -designware  > ${REPORTS_DIR}/${DC_FINAL_DESIGNWARE_AREA_REPORT}
+#report_reference -nosplit -hierarchy > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.reference.rpt
+#report_resources  -nosplit -hierarchy > ${REPORTS_DIR}/${DC_FINAL_RESOURCES_REPORT}
 
 
 # Create a QoR snapshot of timing, physical, constraints, clock, power data, and routing on
 # active scenarios and stores it in the location  specified  by  the icc_snapshot_storage_location
 # variable.
 
-  set icc_snapshot_storage_location ${REPORTS_DIR}/${DCRM_DCT_FINAL_QOR_SNAPSHOT_FOLDER}
-  create_qor_snapshot -name ${DCRM_DCT_FINAL_QOR_SNAPSHOT_REPORT} > ${REPORTS_DIR}/${DCRM_DCT_FINAL_QOR_SNAPSHOT_REPORT}
+# set icc_snapshot_storage_location ${REPORTS_DIR}/${DC_DCT_FINAL_QOR_SNAPSHOT_FOLDER}
+#create_qor_snapshot -name ${DC_DCT_FINAL_QOR_SNAPSHOT_REPORT} > ${REPORTS_DIR}/${DC_DCT_FINAL_QOR_SNAPSHOT_REPORT}
 
 
 # Uncomment the next line to report all the multibit registers and the banking ratio in the design
-# redirect ${REPORTS_DIR}/${DCRM_MULTIBIT_BANKING_REPORT} {report_multibit_banking -nosplit }
+# redirect ${REPORTS_DIR}/${DC_MULTIBIT_BANKING_REPORT} {report_multibit_banking -nosplit }
 
 if { $OPTIMIZATION_FLOW == "hplp"} {
- redirect ${REPORTS_DIR}/${DCRM_MULTIBIT_BANKING_REPORT} {report_multibit_banking -nosplit }
+  redirect ${REPORTS_DIR}/${DC_MULTIBIT_BANKING_REPORT} {report_multibit_banking -nosplit }
 }
 # Use SAIF file for power analysis
 # read_saif -auto_map_names -input ${DESIGN_NAME}.saif -instance < DESIGN_INSTANCE > -verbose
 
-
-report_power  -hier -nosplit > ${REPORTS_DIR}/${DCRM_FINAL_POWER_REPORT}
-
-report_clock_gating \
-  -nosplit          \
-  > ${REPORTS_DIR}/${DESIGN_NAME}.mapped.clock_gating.rpt
-# report_clock_gating -nosplit > ${REPORTS_DIR}/${DCRM_FINAL_CLOCK_GATING_REPORT}
+report_power  -hierarchy -nosplit > ${REPORTS_DIR}/${DC_FINAL_POWER_REPORT}
+report_clock_gating -nosplit > ${REPORTS_DIR}/${DC_FINAL_CLOCK_GATING_REPORT}
 
 # Uncomment the next line if you include the -self_gating to the compile_ultra command
 # to report the XOR Self Gating information.
-# report_self_gating  -nosplit > ${REPORTS_DIR}/${DCRM_FINAL_SELF_GATING_REPORT}
+# report_self_gating  -nosplit > ${REPORTS_DIR}/${DC_FINAL_SELF_GATING_REPORT}
 
 # Uncomment the next line to reports the number, area, and  percentage  of cells
 # for each threshold voltage group in the design.
-# report_threshold_voltage_group -nosplit > ${REPORTS_DIR}/${DCRM_THRESHOLD_VOLTAGE_GROUP_REPORT}
+# report_threshold_voltage_group -nosplit > ${REPORTS_DIR}/${DC_THRESHOLD_VOLTAGE_GROUP_REPORT}
 
 
 # report_congestion (topographical mode only) uses zroute for estimating and reporting
@@ -1166,39 +1031,39 @@ report_clock_gating \
 # Compiler after topographical mode synthesis.
 # Those commands require a license for Design Compiler Graphical.
 
-report_congestion > ${REPORTS_DIR}/${DCRM_DCT_FINAL_CONGESTION_REPORT}
+#report_congestion > ${REPORTS_DIR}/${DC_DCT_FINAL_CONGESTION_REPORT}
 
 # Use the following to generate and write out a congestion map from batch mode
 # This requires a GUI session to be temporarily opened and closed so a valid DISPLAY
 # must be set in your UNIX environment.
 
-if {[info exists env(DISPLAY)]} {
-gui_start
+if {0 && [info exists env(DISPLAY)]} {
+    gui_start
 
-# Create a layout window
-set MyLayout [gui_create_window -type LayoutWindow]
+    # Create a layout window
+    set MyLayout [gui_create_window -type LayoutWindow]
 
-# Build congestion map in case report_congestion was not previously run
-report_congestion -build_map
+    # Build congestion map in case report_congestion was not previously run
+    report_congestion -build_map
 
-# Display congestion map in layout window
-gui_show_map -map "Global Route Congestion" -show true
+    # Display congestion map in layout window
+    gui_show_map -map "Global Route Congestion" -show true
 
-# Zoom full to display complete floorplan
-gui_zoom -window [gui_get_current_window -view] -full
+    # Zoom full to display complete floorplan
+    gui_zoom -window [gui_get_current_window -view] -full
 
-# Write the congestion map out to an image file
-# You can specify the output image type with -format png | xpm | jpg | bmp
+    # Write the congestion map out to an image file
+    # You can specify the output image type with -format png | xpm | jpg | bmp
 
-# The following saves only the congestion map without the legends
-gui_write_window_image -format png -file ${REPORTS_DIR}/${DCRM_DCT_FINAL_CONGESTION_MAP_OUTPUT_FILE}
+    # The following saves only the congestion map without the legends
+    gui_write_window_image -format png -file ${REPORTS_DIR}/${DC_DCT_FINAL_CONGESTION_MAP_OUTPUT_FILE}
 
-# The following saves the entire congestion map layout window with the legends
-gui_write_window_image -window ${MyLayout} -format png -file ${REPORTS_DIR}/${DCRM_DCT_FINAL_CONGESTION_MAP_WINDOW_OUTPUT_FILE}
+    # The following saves the entire congestion map layout window with the legends
+    gui_write_window_image -window ${MyLayout} -format png -file ${REPORTS_DIR}/${DC_DCT_FINAL_CONGESTION_MAP_WINDOW_OUTPUT_FILE}
 
-gui_stop
+    gui_stop
 } else {
-puts "Information: The DISPLAY environment variable is not set. Congestion map generation has been skipped."
+    puts "Information: The DISPLAY environment variable is not set. Congestion map generation has been skipped."
 }
 
 
@@ -1216,56 +1081,46 @@ puts "Information: The DISPLAY environment variable is not set. Congestion map g
 
 change_names -rules verilog -hierarchy
 
-write_icc2_files -force  -output ${RESULTS_DIR}/${DCRM_FINAL_DESIGN_ICC2}
+if {[shell_is_in_topographical_mode]} {
+    write_icc2_files -force  -output ${RESULTS_DIR}/${DC_FINAL_DESIGN_ICC2}
+}
 
-
-#################################################################################
-# Write out Design
-#################################################################################
-
-write -format verilog -hierarchy -output ${RESULTS_DIR}/${DCRM_FINAL_VERILOG_OUTPUT_FILE}
-
-write -format ddc     -hierarchy -output ${RESULTS_DIR}/${DCRM_FINAL_DDC_OUTPUT_FILE}
-
+write -format verilog -hierarchy -output ${RESULTS_DIR}/${DC_FINAL_VERILOG_OUTPUT_FILE}
+write -format ddc     -hierarchy -output ${RESULTS_DIR}/${DC_FINAL_DDC_OUTPUT_FILE}
 
 # Write and close SVF file and make it available for immediate use
 set_svf -off
 
-#################################################################################
-# Write out Design Data
-#################################################################################
+# Note: A secondary floorplan file ${DC_DCT_FINAL_FLOORPLAN_OUTPUT_FILE}.objects
+#       might also be written to capture physical-only objects in the design.
+#       This file should be read in before reading the main floorplan file.
 
+write_floorplan -all ${RESULTS_DIR}/${DC_DCT_FINAL_FLOORPLAN_OUTPUT_FILE}
 
-  # Note: A secondary floorplan file ${DCRM_DCT_FINAL_FLOORPLAN_OUTPUT_FILE}.objects
-  #       might also be written to capture physical-only objects in the design.
-  #       This file should be read in before reading the main floorplan file.
+# If the DC_DCT_SPG_PLACEMENT_OUTPUT_FILE variable has been set in dc_setup_filenames.tcl
+# file then the standard cell physical guidance is being created to support SPG ASCII hand-off
+# to IC Compiler by the write_def command.
+# Invoking write_def commands requires a Design Compiler Graphical license or an IC Compiler
+# Design Planning license.
 
-  write_floorplan -all ${RESULTS_DIR}/${DCRM_DCT_FINAL_FLOORPLAN_OUTPUT_FILE}
+if {[info exists DC_DCT_SPG_PLACEMENT_OUTPUT_FILE]} {
+    write_def -components -output ${RESULTS_DIR}/${DC_DCT_SPG_PLACEMENT_OUTPUT_FILE}
+}
 
-  # If the DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE variable has been set in dc_setup_filenames.tcl
-  # file then the standard cell physical guidance is being created to support SPG ASCII hand-off
-  # to IC Compiler by the write_def command.
-  # Invoking write_def commands requires a Design Compiler Graphical license or an IC Compiler
-  # Design Planning license.
+# Write parasitics data from Design Compiler Topographical placement for static timing analysis
+write_parasitics -output ${RESULTS_DIR}/${DC_DCT_FINAL_SPEF_OUTPUT_FILE}
 
-  if {[info exists DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE]} {
-    write_def -components -output ${RESULTS_DIR}/${DCRM_DCT_SPG_PLACEMENT_OUTPUT_FILE}
-  }
+# Write SDF backannotation data from Design Compiler Topographical placement for static timing analysis
+write_sdf ${RESULTS_DIR}/${DC_DCT_FINAL_SDF_OUTPUT_FILE}
 
-  # Write parasitics data from Design Compiler Topographical placement for static timing analysis
-  write_parasitics -output ${RESULTS_DIR}/${DCRM_DCT_FINAL_SPEF_OUTPUT_FILE}
+# Do not write out net RC info into SDC
+set_app_var write_sdc_output_lumped_net_capacitance false
+set_app_var write_sdc_output_net_resistance false
 
-  # Write SDF backannotation data from Design Compiler Topographical placement for static timing analysis
-  write_sdf ${RESULTS_DIR}/${DCRM_DCT_FINAL_SDF_OUTPUT_FILE}
-
-  # Do not write out net RC info into SDC
-  set_app_var write_sdc_output_lumped_net_capacitance false
-  set_app_var write_sdc_output_net_resistance false
-
-write_sdc -nosplit ${RESULTS_DIR}/${DCRM_FINAL_SDC_OUTPUT_FILE}
+write_sdc -nosplit ${RESULTS_DIR}/${DC_FINAL_SDC_OUTPUT_FILE}
 
 # If SAIF is used, write out SAIF name mapping file for PrimeTime-PX
- saif_map -type ptpx -write_map ${RESULTS_DIR}/${DESIGN_NAME}.mapped.SAIF.namemap
+saif_map -type ptpx -write_map ${RESULTS_DIR}/${DESIGN_NAME}.mapped.SAIF.namemap
 
 
 #################################################################################
@@ -1274,19 +1129,19 @@ write_sdc -nosplit ${RESULTS_DIR}/${DCRM_FINAL_SDC_OUTPUT_FILE}
 # This should be the last step in the script
 #################################################################################
 
-# write_milkyway uses mw_design_library variable from dc_setup.tcl
-write_milkyway -overwrite -output ${DCRM_FINAL_MW_CEL_NAME}
+if {[shell_is_in_topographical_mode]} {
+    # write_milkyway uses mw_design_library variable from dc_setup.tcl
+    write_milkyway -overwrite -output ${DC_FINAL_MW_CEL_NAME}
+}
 
 
 #-------------------------------------------------------------------------
 # Post-synthesis plugin
 #-------------------------------------------------------------------------
 
-
 if {[file exists [which $dc_post_synthesis_plugin]]} {
   puts "Info: Reading post-synthesis plugin: $dc_post_synthesis_plugin"
   source -echo -verbose $dc_post_synthesis_plugin
 }
-
 
 exit

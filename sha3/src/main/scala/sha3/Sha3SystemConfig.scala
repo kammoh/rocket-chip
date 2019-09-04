@@ -9,14 +9,9 @@ import freechips.rocketchip.tile.{BuildRoCC, OpcodeSet, RocketTileParams, XLen}
 //import freechips.rocketchip.unittest.UnitTests
 
 
-//class WithSha3 extends Config((_, _, _) => {
-//  case BuildRoCC =>
-//    implicit val valName: ValName = ValName("TestHarness")
-//    Seq((p: Parameters) => LazyModule(new Sha3Accelerator(OpcodeSet.custom0)(p)))
-//})
 
 class WithSha3 extends Config((site, here, up) => {
-  case BuildRoCC => List(
+  case BuildRoCC => Seq(
     (p: Parameters) => {
       val sha3Rocc = LazyModule(new Sha3Accelerator(OpcodeSet.custom0)(p))
       sha3Rocc
@@ -31,9 +26,9 @@ class WithMySmallConfig extends Config((site, here, up) => {
       core = RocketCoreParams(
         useVM = false,
         fpu = None,
-        //          mulDiv = Some(MulDivParams(mulUnroll = 1))),
+        mulDiv = Some(MulDivParams(mulUnroll = 8)),
       ),
-//      btb = None,
+      btb = None,
       dcache = Some(DCacheParams(
         rowBits = site(SystemBusKey).beatBits,
         nSets = 64,

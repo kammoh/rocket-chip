@@ -1,0 +1,11 @@
+[dc]
+max_cores = 4
+optimization_flow = "rtm_exp" # "hplp" or "hc"
+executable = "dc_shell" # name/path of the executable
+scripts = ["dc.tcl"]
+#rtk = "rtk.saed32.rvt.tt"
+#target_frequency = "500 MHz"
+#tool_args = ["-topographical_mode", "-f", "dc.tcl"]
+rtk = "rtk.asap7.rvt.tt"
+target_frequency = "2.0 GHz"
+tool_args = ["-f", "dc.tcl"]

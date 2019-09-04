@@ -1,0 +1,54 @@
+["rtk.saed32.rvt.tt"]
+name = "saed32_rvt_tt"
+description = '''
+  Synopsys SAED 32 educational PDK and standard-cell library
+'''
+node = "32nm"
+corner = "tt"
+metals = 9
+vt = "rvt"
+rtk_path = "/src/SAED32nm/rvt_tt_1p05v_25c"
+target_library_files = ["saed32rvt_tt1p05v25c.db"]
+additional_link_lib_files = ["saed32sram_tt1p05v25c.db"]
+mw_reference_lib_dirs = ["saed32nm_rvt_1p9m.mwlib", "saed32sram.mwlib"]
+tech_file = "saed32nm_1p9m_mw.tf"
+map_file = "saed32nm_tf_itf_tluplus.map"
+tluplus_max_file = "saed32nm_1p9m_Cmax.tluplus"
+tluplus_min_file = "saed32nm_1p9m_Cmin.tluplus"
+alib_library_analysis_cache = "/src/SAED32nm/alib.cache"
+adk_driving_cell = "INVX1"
+adk_clock_driving_cell = "NBUFFX16"
+adk_typical_on_chip_load = 0.005
+max_fanout = 18.0
+time_scale = "1ns"
+
+["rtk.asap7.rvt.tt"]
+rtk_path = "/src/ASAP7_PDKandLIB_v1p5/asap7libs_24"
+name = "ASAP7"
+description = '''
+  The ASAP 7nm Predictive PDK was developed at ASU in collaboration with ARM Research.
+  The PDK is available for non-commercial academic use for free.
+  Release 1p5, November 13, 2017: Library is still 4x
+'''
+homepage = "http://asap.asu.edu/asap/"
+version = "1.5"
+node = "7nm_finfet"
+corner = "tt"
+metals = 9
+vt = "rvt"
+target_library_files = ["lib/asap7sc7p5t_22b_SIMPLE_RVT_TT_170906.db", "lib/asap7sc7p5t_22b_INVBUF_RVT_TT_170906.db",
+  "lib/asap7sc7p5t_22b_OA_RVT_TT_170906.db", "lib/asap7sc7p5t_22b_AO_RVT_TT_170906.db",
+  "lib/asap7sc7p5t_22b_SEQ_RVT_TT_170906.db"]
+additional_link_lib_files = []
+mw_reference_lib_dirs = ["asap7.mwlib"]
+adk_driving_cell = "INVx1_ASAP7_75t_R"
+adk_clock_driving_cell = "BUFx16f_ASAP7_75t_R"
+adk_typical_on_chip_load = "0.005"
+tech_file = "asap7.tf"
+#map_file = ".map"
+#tluplus_max_file = ".tluplus"
+#tluplus_min_file = ".tluplus"
+alib_library_analysis_cache = "/src/ASAP7_PDKandLIB_v1p5/alib.cache"
+max_fanout = 20.0
+time_scale = "1ps"
+
